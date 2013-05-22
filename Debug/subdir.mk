@@ -4,6 +4,7 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
+../ABCFile.cpp \
 ../DataReader.cpp \
 ../SWFFile.cpp \
 ../SWFTag.cpp \
@@ -12,6 +13,7 @@ CPP_SRCS += \
 ../main.cpp 
 
 OBJS += \
+./ABCFile.o \
 ./DataReader.o \
 ./SWFFile.o \
 ./SWFTag.o \
@@ -20,6 +22,7 @@ OBJS += \
 ./main.o 
 
 CPP_DEPS += \
+./ABCFile.d \
 ./DataReader.d \
 ./SWFFile.d \
 ./SWFTag.d \

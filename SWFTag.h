@@ -15,6 +15,7 @@ class SWFTag
 public:
 	uint8_t type;
 	std::string content;
+	bool isExtraLength;
 
 	SWFTag();
 	virtual ~SWFTag();

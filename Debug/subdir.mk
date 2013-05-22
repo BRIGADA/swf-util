@@ -7,18 +7,24 @@ CPP_SRCS += \
 ../DataReader.cpp \
 ../SWFFile.cpp \
 ../SWFTag.cpp \
+../SWFTagFileAttributes.cpp \
+../SWFTagMetadata.cpp \
 ../main.cpp 
 
 OBJS += \
 ./DataReader.o \
 ./SWFFile.o \
 ./SWFTag.o \
+./SWFTagFileAttributes.o \
+./SWFTagMetadata.o \
 ./main.o 
 
 CPP_DEPS += \
 ./DataReader.d \
 ./SWFFile.d \
 ./SWFTag.d \
+./SWFTagFileAttributes.d \
+./SWFTagMetadata.d \
 ./main.d 
 
 

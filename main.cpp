@@ -22,7 +22,7 @@
 #include"DataReader.h"
 #include "SWFFile.h"
 #include "SWFTagFileAttributes.h"
-
+#include "ABCFile.h"
 void SYSERR(const char * sysfunc)
 {
 	printf("SYSERR: %s: %s (%d)\n", sysfunc, strerror(errno), errno);
@@ -68,16 +68,19 @@ int main(int argc, char * argv[])
 			case 82:
 			{
 				printf("DoABC2\n");
-				char oname[1024];
+//				char oname[1024];
 				int p = (*it)->content.find_first_of('\0',4);
-				sprintf(oname, "%s-%d.abc", argv[1], abccount++);
-				int ofd = creat(oname, 00666);
-				write(ofd, (*it)->content.data() + p + 1, (*it)->content.size() - p - 1);
-				close(ofd);
+//				sprintf(oname, "%s-%d.abc", argv[1], abccount++);
+//				int ofd = creat(oname, 00666);
+//				write(ofd, (*it)->content.data() + p + 1, (*it)->content.size() - p - 1);
+//				close(ofd);
+
+				ABCFile abc;
+				abc.parse((*it)->content.substr(p + 1));
 				break;
 			}
 			default:
-				printf("%d - %lu\n", (*it)->type, (*it)->content.size());
+				printf("%d - %u\n", (*it)->type, (*it)->content.size());
 			}
 		}
 

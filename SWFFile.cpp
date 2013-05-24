@@ -118,7 +118,7 @@ bool SWFFile::load(std::string filename)
 	close(fd);
 
 	if(result) {
-		DataReader d((uint8_t*)buf, header.filesize - sizeof(SWFHeader_t));
+		DataReader d(buf, header.filesize - sizeof(SWFHeader_t));
 
 		frameSize = d.readRECT();
 		frameRate = d.readUI16();

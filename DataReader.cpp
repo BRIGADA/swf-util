@@ -7,7 +7,7 @@
 
 #include "DataReader.h"
 
-DataReader::DataReader(unsigned char* buf, uint32_t size) : _cur(buf), _end(buf+size), _bit(0){
+DataReader::DataReader(const char* buf, uint32_t size) : _cur(buf), _end(buf+size), _bit(0){
 }
 
 DataReader::~DataReader() {
@@ -113,9 +113,52 @@ uint32_t DataReader::readUI32() {
 	return result;
 }
 
-std::string DataReader::read(uint32_t length) {
+uint32_t DataReader::readU32() {
+	uint32_t result = *_cur;
+	_cur++;
+	if(result & 0x00000080) {
+		result = (result & 0x0000007f) | (*_cur << 7);
+		_cur++;
+		if(result & 0x00004000) {
+			result = (result & 0x00003fff) | (*_cur << 14);
+			_cur++;
+			if(result & 0x00200000) {
+				result = (result & 0x001fffff) | (*_cur << 21);
+				_cur++;
+				if(result & 0x10000000) {
+					result = (result & 0x0fffffff) | (*_cur << 28);
+					_cur++;
+				}
+			}
+		}
+	}
+	return result;
+}
+
+uint32_t DataReader::readU30() {
+	return readU32() & 0x3fffffff;
+}
+
+double DataReader::readD64() {
+	double result = *((double *)_cur);
+	_cur+=8;
+	return result;
+}
+
+std::string DataReader::read(uint32_t length)
+{
 	std::string result((char *)_cur, length);
 	_cur += length;
+	return result;
+}
+
+std::string DataReader::readString() {
+	return read(readU30());
+}
+
+uint8_t DataReader::readU8() {
+	uint8_t result = *(uint8_t*)_cur;
+	_cur++;
 	return result;
 }
 

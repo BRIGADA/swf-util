@@ -14,7 +14,7 @@
 
 class DataReader {
 public:
-	DataReader(unsigned char * buf, uint32_t size);
+	DataReader(const char * buf, uint32_t size);
 	virtual ~DataReader();
 
 	void align();
@@ -29,14 +29,22 @@ public:
 	uint32_t readUI29();
 	uint32_t readUI32();
 
+	uint8_t readU8();
+	uint32_t readU32();
+	uint32_t readU30();
+
+	std::string readString();
+
+	double readD64();
+
 	std::string read(uint32_t length);
 
 	bool eof();
 
 
 protected:
-	unsigned char * _cur;
-	unsigned char * _end;
+	const char * _cur;
+	const char * _end;
 	uint8_t _bit;
 };
 

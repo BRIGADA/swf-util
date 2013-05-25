@@ -142,11 +142,3 @@ bool SWFFile::load(std::string filename)
 	delete [] buf;
 	return result;
 }
-
-bool SWFFile::save(std::string filename) {
-
-	SWFHeader_t header;
-
-
-	return false;
-}

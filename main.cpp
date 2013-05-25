@@ -22,7 +22,7 @@
 #include"DataReader.h"
 #include "SWFFile.h"
 #include "SWFTagFileAttributes.h"
-#include "ABCFile.h"
+#include "ABCReader.h"
 void SYSERR(const char * sysfunc)
 {
 	printf("SYSERR: %s: %s (%d)\n", sysfunc, strerror(errno), errno);
@@ -46,7 +46,7 @@ int main(int argc, char * argv[])
 	SWFFile swf;
 	if(swf.load(argv[1]))
 	{
-		unsigned int abccount = 0;
+		// unsigned int abccount = 0;
 		for(SWFTagList::iterator it = swf.tags.begin(); it != swf.tags.end(); ++it)
 		{
 			switch((*it)->type)
@@ -68,19 +68,46 @@ int main(int argc, char * argv[])
 			case 82:
 			{
 				printf("DoABC2\n");
-//				char oname[1024];
 				int p = (*it)->content.find_first_of('\0',4);
-//				sprintf(oname, "%s-%d.abc", argv[1], abccount++);
-//				int ofd = creat(oname, 00666);
-//				write(ofd, (*it)->content.data() + p + 1, (*it)->content.size() - p - 1);
-//				close(ofd);
+				ABCFile * abc = ABCReader((*it)->content.data() + p + 1, (*it)->content.length() - p - 1).read();
 
-				ABCFile abc;
-				abc.parse((*it)->content.substr(p + 1));
+				if(abc) {
+					printf("version: %u.%u\n", abc->versionMajor, abc->versionMinor);
+					printf("   ints: %lu\n", abc->ints.size());
+					printf("  uints: %lu\n", abc->uints.size());
+					printf("doubles: %lu\n", abc->doubles.size());
+					printf("strings: %lu\n", abc->strings.size());
+					printf("     ns: %lu\n", abc->namespaces.size());
+					printf("    sns: %lu\n", abc->namespaceSets.size());
+					printf("  names: %lu\n", abc->multinames.size());
+					printf("methods: %lu\n", abc->methods.size());
+					printf("  metas: %lu\n", abc->metadatas.size());
+					printf("  insts: %lu\n", abc->instances.size());
+					printf("classes: %lu\n", abc->classes.size());
+					printf("scripts: %lu\n", abc->scripts.size());
+					printf(" bodies: %lu\n", abc->bodies.size());
+
+					for(ABCInstanceList::iterator it = abc->instances.begin(); it != abc->instances.end(); ++it) {
+						if(abc->multinames[(*it).name].kind == CONSTANT_QName)
+						{
+							printf("package %s\n", abc->strings[abc->namespaces[abc->multinames[(*it).name].ns].name].data());
+							printf("{\n");
+							if((*it).super) {
+								printf("  class %s extends %s\n", abc->strings[abc->multinames[(*it).name].name].data(), abc->strings[abc->multinames[(*it).super].name].data());
+							}
+							else
+							{
+								printf("  class %s\n", abc->strings[abc->multinames[(*it).name].name].data());
+							}
+							printf("}\n\n");
+						}
+						else throw "Unknown class name type";
+					}
+				}
 				break;
 			}
 			default:
-				printf("%d - %u\n", (*it)->type, (*it)->content.size());
+				printf("%d - %lu\n", (*it)->type, (*it)->content.size());
 			}
 		}
 

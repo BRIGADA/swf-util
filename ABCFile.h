@@ -9,6 +9,7 @@
 #define ABCFILE_H_
 #include <inttypes.h>
 #include "ABCTypes.h"
+#include <string>
 
 class ABCFile
 {

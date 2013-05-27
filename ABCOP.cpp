@@ -7,12 +7,12 @@
 
 #include "ABCOP.h"
 
-ABCOP::ABCOP() {
-	// TODO Auto-generated constructor stub
-
+ABCOP::ABCOP(uint8_t op) : _op(op) {
 }
 
 ABCOP::~ABCOP() {
-	// TODO Auto-generated destructor stub
 }
 
+uint8_t ABCOP::op() {
+    return _op;
+}

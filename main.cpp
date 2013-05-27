@@ -5,7 +5,7 @@
  *      Author: brigada
  */
 
-
+#include <stdarg.h>
 #include <iostream>
 #include <string>
 #include <sys/types.h>
@@ -23,6 +23,31 @@
 #include "SWFFile.h"
 #include "SWFTagFileAttributes.h"
 #include "ABCReader.h"
+
+bool writefile(std::string filename, std::string& content) {
+	int fd = open(filename.data(), O_WRONLY|O_CREAT|O_TRUNC, 00666);
+	if(fd == -1) return false;
+	write(fd, content.data(), content.size());
+	close(fd);
+	return true;
+}
+
+std::string stringf(std::string format, ...) {
+
+	va_list ap;
+	va_start(ap, format);
+	int buf_length = vsnprintf(NULL, 0, format.data(), ap);
+	printf("len=%d\n", buf_length);
+	va_end(ap);
+
+	char * buf = new char[buf_length + 1];
+	va_start(ap, format);
+	vsnprintf(buf, buf_length + 1, format.data(), ap);
+	va_end(ap);
+	std::string result(buf, buf_length);
+	delete [] buf;
+	return result;
+}
 void SYSERR(const char * sysfunc)
 {
 	printf("SYSERR: %s: %s (%d)\n", sysfunc, strerror(errno), errno);
@@ -86,6 +111,13 @@ int main(int argc, char * argv[])
 					printf("classes: %lu\n", abc->classes.size());
 					printf("scripts: %lu\n", abc->scripts.size());
 					printf(" bodies: %lu\n", abc->bodies.size());
+
+					uint32_t i = 0;
+					for(ABCBodyList::iterator it = abc->bodies.begin(); it != abc->bodies.end(); ++it, ++i) {
+						std::string fn = stringf("%s.%04x.body", argv[1], i);
+						printf("%s\n", fn.data());
+						writefile(fn, (*it).code);
+					}
 
 					for(ABCInstanceList::iterator it = abc->instances.begin(); it != abc->instances.end(); ++it) {
 						if(abc->multinames[(*it).name].kind == CONSTANT_QName)

@@ -19,14 +19,9 @@ public:
 
 	uint16_t versionMajor;
 	uint16_t versionMinor;
-
-	ABCSI32List ints;
-	ABCUI32List uints;
-	ABCDoubleList doubles;
-	ABCStringList strings;
-	ABCNamespaceList namespaces;
-	ABCNamespaceSetList namespaceSets;
-	ABCMultinameList multinames;
+        
+        ABCConstantPool cpool;
+        
 	ABCMethodList methods;
 	ABCMetadataList metadatas;
 	ABCInstanceList instances;

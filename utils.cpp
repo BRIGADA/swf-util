@@ -18,3 +18,11 @@ std::string stringf(std::string format, ...) {
     delete [] buf;
     return result;
 }
+
+void DEBUG(std::string format, ...) {
+    va_list ap;
+    va_start(ap, format);
+    vprintf(format.data(), ap);
+    printf("\n");
+    va_end(ap);
+}

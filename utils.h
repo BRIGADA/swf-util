@@ -11,6 +11,7 @@
 #include <string>
 
 std::string stringf(std::string format, ...);
+void DEBUG(std::string format, ...);
 
 #endif	/* UTILS_H */
 

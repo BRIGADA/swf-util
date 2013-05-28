@@ -30,8 +30,8 @@ public:
 
     double readD64(); // 8-byte IEEE-754 floating point
     
-    uint32_t offset();
-    void offset(uint32_t value);
+    uint32_t pos();
+    void pos(uint32_t value);
     bool eof();
 
 private:

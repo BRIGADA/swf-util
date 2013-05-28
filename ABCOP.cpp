@@ -7,12 +7,19 @@
 
 #include "ABCOP.h"
 
-ABCOP::ABCOP(uint8_t op) : _op(op) {
+ABCOP * ABCOP::create(ABCReader& reader) {
+    uint8_t op = reader.readU8();
+    switch(op) {
+        case 0xa0:
+            return new ABCOP_add();
+        default:
+            throw "UNKNOWN OPCODE";
+    }
 }
 
-ABCOP::~ABCOP() {
+ABCOP_add::ABCOP_add() : ABCOP(0xa0) {
 }
 
-uint8_t ABCOP::op() {
-    return _op;
+std::string ABCOP_add::render() {
+    return "add";
 }

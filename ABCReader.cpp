@@ -14,10 +14,22 @@
 ABCReader::ABCReader(const char* data, uint32_t size) : _cur(data), _end(data + size){
 }
 
-ABCReader::ABCReader(const std::string& data) : _cur(data.data()), _end(data.data() + data.size()){
+ABCReader::ABCReader(const std::string& data) : _start(data.data()), _cur(data.data()), _end(data.data() + data.size()){
 }
 
 ABCReader::~ABCReader() {
+}
+
+uint32_t ABCReader::offset() {
+    return _cur - _start;
+}
+
+void ABCReader::offset(uint32_t value) {
+    _cur = _start + value;
+}
+
+bool ABCReader::eof() {
+    return _cur >= _end;
 }
 
 uint8_t ABCReader::readU8() {

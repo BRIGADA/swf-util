@@ -14,20 +14,30 @@
 
 class ABCOP {
 public:
-	ABCOP(uint8_t op);
-	virtual ~ABCOP();
-	virtual std::string render() = 0;
-	uint8_t op();
-	static ABCOP* create(ABCReader& reader);
+
+    ABCOP(uint8_t opcode) : _op(opcode) {
+    }
+
+    virtual ~ABCOP() {
+    }
+
+    virtual std::string render() = 0;
+
+    uint8_t op() {
+        return _op;
+    }
+    
+    static ABCOP* create(ABCReader& reader);
+    
 protected:
-	uint8_t _op;
-
-
+    uint8_t _op;
 };
 
 class ABCOP_add : public ABCOP {
 public:
-	ABCOP_add();
+
+    ABCOP_add();
+    virtual std::string render();
 
 };
 

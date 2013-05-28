@@ -23,6 +23,10 @@
 #include "SWFFile.h"
 #include "SWFTagFileAttributes.h"
 #include "ABCReader.h"
+#include "utils.h"
+#include "ABCOP.h"
+#include <map>
+
 
 bool writefile(std::string filename, std::string& content) {
     int fd = open(filename.data(), O_WRONLY | O_CREAT | O_TRUNC, 00666);
@@ -30,23 +34,6 @@ bool writefile(std::string filename, std::string& content) {
     write(fd, content.data(), content.size());
     close(fd);
     return true;
-}
-
-std::string stringf(std::string format, ...) {
-
-    va_list ap;
-    va_start(ap, format);
-    int buf_length = vsnprintf(NULL, 0, format.data(), ap);
-    printf("len=%d\n", buf_length);
-    va_end(ap);
-
-    char * buf = new char[buf_length + 1];
-    va_start(ap, format);
-    vsnprintf(buf, buf_length + 1, format.data(), ap);
-    va_end(ap);
-    std::string result(buf, buf_length);
-    delete [] buf;
-    return result;
 }
 
 void SYSERR(const char * sysfunc) {
@@ -110,8 +97,15 @@ int main(int argc, char * argv[]) {
                         uint32_t i = 0;
                         for (ABCBodyList::iterator it = abc->bodies.begin(); it != abc->bodies.end(); ++it, ++i) {
                             std::string fn = stringf("%s.%04x.body", argv[1], i);
-                            printf("%s\n", fn.data());
                             writefile(fn, (*it).code);
+                            
+                            ABCReader reader((*it).code);
+                            std::map<uint32_t, ABCOP*> ops;
+                            
+                            while(!reader.eof()) {
+                                uint32_t l = reader.position();
+                                ops[l] = ABCOP::create(reader);
+                            }
                         }
 
                         for (ABCInstanceList::iterator it = abc->instances.begin(); it != abc->instances.end(); ++it) {

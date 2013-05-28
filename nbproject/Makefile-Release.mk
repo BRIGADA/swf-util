@@ -43,7 +43,8 @@ OBJECTFILES= \
 	${OBJECTDIR}/SWFTag.o \
 	${OBJECTDIR}/SWFTagFileAttributes.o \
 	${OBJECTDIR}/SWFTagMetadata.o \
-	${OBJECTDIR}/main.o
+	${OBJECTDIR}/main.o \
+	${OBJECTDIR}/utils.o
 
 
 # C Compiler Flags
@@ -64,11 +65,11 @@ LDLIBSOPTIONS=
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
-	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/swf-util
+	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/uswf
 
-${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/swf-util: ${OBJECTFILES}
+${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/uswf: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
-	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/swf-util ${OBJECTFILES} ${LDLIBSOPTIONS}
+	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/uswf ${OBJECTFILES} ${LDLIBSOPTIONS}
 
 ${OBJECTDIR}/ABCFile.o: ABCFile.cpp 
 	${MKDIR} -p ${OBJECTDIR}
@@ -115,13 +116,18 @@ ${OBJECTDIR}/main.o: main.cpp
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/main.o main.cpp
 
+${OBJECTDIR}/utils.o: utils.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/utils.o utils.cpp
+
 # Subprojects
 .build-subprojects:
 
 # Clean Targets
 .clean-conf: ${CLEAN_SUBPROJECTS}
 	${RM} -r ${CND_BUILDDIR}/${CND_CONF}
-	${RM} ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/swf-util
+	${RM} ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/uswf
 
 # Subprojects
 .clean-subprojects:

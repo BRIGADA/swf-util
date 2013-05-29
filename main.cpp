@@ -101,9 +101,11 @@ int main(int argc, char * argv[]) {
                             writefile(fn, (*it).code);
                             
                             ABCReader reader((*it).code);
-//                            std::map<uint32_t, ABCOP*> ops;
-                            
+
                             std::map<uint32_t, std::string> ops;
+                            
+                            std::vector<bool> used;
+                            used.resize((*it).code.size());
                             
                             ABCUI32List ep; // entryPoints
                             ep.push_back(0);
@@ -119,20 +121,46 @@ int main(int argc, char * argv[]) {
                                     reader.pos(ip);                                
                                     uint8_t op = reader.readU8();
                                     switch(op) {
-                                        /*
                                         case 0x01: // bkpt
                                         {
-                                            uint32_t index = reader.readU30();
                                             ops[ip] = "bkpt";
                                             break;
-                                        }*/
+                                        }
+                                        case 0x02: // nop
+                                        {
+                                            ops[ip] = "nop";
+                                            break;
+                                        }
                                         case 0x03: // throw
                                         {
                                             ops[ip] = "throw";
                                             break;
                                         }
-                                        case 0x08: // kill
+                                        case 0x04: // getsuper
                                         {
+                                            uint32_t index = reader.readU30();
+                                            ops[ip] = stringf("getsuper (index=%u)", index);
+                                            break;
+                                        }
+                                        case 0x05: // setsuper
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            ops[ip] = stringf("setsuper (index=%u)", index);
+                                            break;
+                                        }
+                                        case 0x06: // dxns
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            ops[ip] = stringf("dxns (index=%u)", index);
+                                            break;
+                                        }
+                                        case 0x07: // dxnslate
+                                        {
+                                            ops[ip] = "dxnslate";
+                                            break;
+                                        }
+                                        case 0x08: // kill
+                                            {
                                             uint32_t index = reader.readU30();
                                             ops[ip] = stringf("kill (index=%u)", index);
                                             break;
@@ -175,6 +203,10 @@ int main(int argc, char * argv[]) {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
                                             ops[ip] = stringf("jump (offset=%d)", offset);
+                                            used[ip + 0] = true;
+                                            used[ip + 1] = true;
+                                            used[ip + 2] = true;
+                                            used[ip + 3] = true;
                                             continue;
                                         }
                                         case 0x11: // iftrue
@@ -233,6 +265,42 @@ int main(int argc, char * argv[]) {
                                             ops[ip] = stringf("ifge (offset=%d)", offset);
                                             break;
                                         }
+                                        case 0x19: // ifstricteq
+                                        {
+                                            int32_t offset = reader.readS24();
+                                            ep.push_back(reader.pos() + offset);
+                                            ops[ip] = stringf("ifstricteq (offset=%d)", offset);
+                                            break;
+                                        }
+                                        case 0x1a: // ifstrictne
+                                        {
+                                            int32_t offset = reader.readS24();
+                                            ep.push_back(reader.pos() + offset);
+                                            ops[ip] = stringf("ifstrictne (offset=%d)", offset);
+                                            break;
+                                        }
+                                        case 0x1b: // lookupswitch
+                                        {
+                                            int32_t default_offset = reader.readS24();
+                                            ep.push_back(ip + default_offset);
+
+                                            int32_t case_count = reader.readU30();
+                                            case_count++;
+                                            
+                                            std::string cases;
+                                            
+                                            do {
+                                                uint32_t case_offset = reader.readS24();
+                                                ep.push_back(ip + case_offset);
+                                                if(!cases.empty()) cases += ", ";
+                                                cases += stringf("%d", case_offset);
+                                            } while (case_count--);
+
+                                            ops[ip] = stringf("lookupswitch (default=%d, cases=[%s])", default_offset, cases.data());
+                                            for(uint32_t i = ip; i < reader.pos(); ++i) used[i] = true;
+                                            
+                                            continue;
+                                        }
                                         case 0x1c: // pushwith
                                         {
                                             ops[ip] = "pushwith";
@@ -248,6 +316,11 @@ int main(int argc, char * argv[]) {
                                             ops[ip] = "nextname";
                                             break;
                                         }
+                                        case 0x1f: // hasnext
+                                        {
+                                            ops[ip] = "hasnext";
+                                            break;
+                                        }
                                         case 0x20: // pushnull
                                         {
                                             ops[ip] = "pushnull";
@@ -256,6 +329,11 @@ int main(int argc, char * argv[]) {
                                         case 0x21: // pushundefined
                                         {
                                             ops[ip] = "pusundefined";
+                                            break;
+                                        }
+                                        case 0x23: // nextvalue
+                                        {
+                                            ops[ip] = "nextvalue";
                                             break;
                                         }
                                         case 0x24: // pushbyte
@@ -295,10 +373,16 @@ int main(int argc, char * argv[]) {
                                             ops[ip] = "dup";
                                             break;
                                         }
+                                        case 0x2b: // swap
+                                        {
+                                            ops[ip] = "swap";
+                                            break;
+                                        }
                                         case 0x2c: // pushstring
                                         {
                                             uint32_t index = reader.readU30();
-                                            ops[ip] = stringf("pushstring (index=%u)", index);
+                                            
+                                            ops[ip] = stringf("pushstring \"%s\" (index=%d)", abc->cpool.strings[index].data(), index);
                                             break;
                                         }
                                         case 0x2d: // pushint
@@ -343,11 +427,38 @@ int main(int argc, char * argv[]) {
                                             ops[ip] = stringf("newfunction (index=%u)", index);
                                             break;
                                         }
+                                        case 0x41: // call
+                                        {
+                                            uint32_t argcount = reader.readU30();
+                                            ops[ip] = stringf("call (argcount=%u)", argcount);
+                                            break;                                            
+                                        }
                                         case 0x42: // construct
                                         {
                                             uint32_t argcount = reader.readU30();
                                             ops[ip] = stringf("construct (argcount=%u)", argcount);
                                             break;                                            
+                                        }
+                                        case 0x43: // callmethod
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            uint32_t argcount = reader.readU30();
+                                            ops[ip] = stringf("callmethod (index=%u, argcount=%u)", index, argcount);
+                                            break;
+                                        }
+                                        case 0x44: // callstatic
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            uint32_t argcount = reader.readU30();
+                                            ops[ip] = stringf("callstatic (index=%u, argcount=%u)", index, argcount);
+                                            break;
+                                        }
+                                        case 0x45: // callsuper
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            uint32_t argcount = reader.readU30();
+                                            ops[ip] = stringf("callsuper (index=%u, argcount=%u)", index, argcount);
+                                            break;
                                         }
                                         case 0x46: // callproperty
                                         {
@@ -359,11 +470,13 @@ int main(int argc, char * argv[]) {
                                         case 0x47: // returnvoid
                                         {
                                             ops[ip] = "returnvoid";
+                                            used[ip] = true;
                                             continue;
                                         }
                                         case 0x48: // returnvalue
                                         {
                                             ops[ip] = "returnvalue";
+                                            used[ip] = true;
                                             continue;
                                         }
                                         case 0x49: // constructsuper
@@ -379,11 +492,31 @@ int main(int argc, char * argv[]) {
                                             ops[ip] = stringf("constructprop (index=%u, argcount=%u)", index, argcount);
                                             break;
                                         }
+                                        case 0x4c: // callproplex
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            uint32_t argcount = reader.readU30();
+                                            ops[ip] = stringf("callproplex (index=%u, argcount=%u)", index, argcount);
+                                            break;
+                                        }
+                                        case 0x4e: // callsupervoid
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            uint32_t argcount = reader.readU30();
+                                            ops[ip] = stringf("callsupervoid (index=%u, argcount=%u)", index, argcount);
+                                            break;
+                                        }
                                         case 0x4f: // callpropvoid
                                         {
                                             uint32_t index = reader.readU30();
                                             uint32_t argcount = reader.readU30();
                                             ops[ip] = stringf("callpropvoid (index=%u, argcount=%u)", index, argcount);
+                                            break;
+                                        }
+                                        case 0x53: // applytype
+                                        {
+                                            uint32_t argcount = reader.readU30();
+                                            ops[ip] = stringf("applytype (argcount=%u)", argcount);
                                             break;
                                         }
                                         case 0x55: // newobject
@@ -409,6 +542,18 @@ int main(int argc, char * argv[]) {
                                             ops[ip] = stringf("newclass (index=%u)", index);
                                             break;
                                         }
+                                        case 0x59: // getdescendants
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            ops[ip] = stringf("getdescendants (index=%u)", index);
+                                            break;
+                                        }
+                                        case 0x5a: // newcatch
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            ops[ip] = stringf("newcatch (index=%u)", index);
+                                            break;
+                                        }
                                         case 0x5d: // findpropstrict
                                         {
                                             uint32_t index = reader.readU30();
@@ -419,6 +564,13 @@ int main(int argc, char * argv[]) {
                                         {
                                             uint32_t index = reader.readU30();
                                             ops[ip] = stringf("findproperty (index=%u)", index);
+                                            break;                                            
+                                        }
+                                        case 0x5f: // finddef
+                                        {
+                                            // not in spec
+                                            uint32_t index = reader.readU30();
+                                            ops[ip] = stringf("finddef (index=%u)", index);
                                             break;                                            
                                         }
                                         case 0x60: // getlex
@@ -445,6 +597,11 @@ int main(int argc, char * argv[]) {
                                             ops[ip] = stringf("setlocal (index=%u)", index);
                                             break;
                                         }
+                                        case 0x64: // getglobalscope
+                                        {
+                                            ops[ip] = "getglobalscope";
+                                            break;
+                                        }
                                         case 0x65: // getscopeobject
                                         {
                                             uint8_t index = reader.readU8();
@@ -463,6 +620,12 @@ int main(int argc, char * argv[]) {
                                             ops[ip] = stringf("initproperty (index=%u)", index);
                                             break;
                                         }
+                                        case 0x6a: // deleteproperty
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            ops[ip] = stringf("deleteproperty (index=%u)", index);
+                                            break;
+                                        }
                                         case 0x6c: // getslot
                                         {
                                             uint32_t index = reader.readU30();
@@ -475,9 +638,31 @@ int main(int argc, char * argv[]) {
                                             ops[ip] = stringf("setslot (index=%u)", index);
                                             break;
                                         }
+                                        case 0x6e: // getglobalslot
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            ops[ip] = stringf("getglobalslot (index=%u)", index);
+                                            break;
+                                        }
+                                        case 0x6f: // setglobalslot
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            ops[ip] = stringf("setglobalslot (index=%u)", index);
+                                            break;
+                                        }
                                         case 0x70: // convert_s
                                         {
                                             ops[ip] = "convert_s";
+                                            break;
+                                        }
+                                        case 0x71: // esc_xelem
+                                        {
+                                            ops[ip] = "esc_xelem";
+                                            break;
+                                        }
+                                        case 0x72: // esc_xattr
+                                        {
+                                            ops[ip] = "esc_xattr";
                                             break;
                                         }
                                         case 0x73: // convert_i
@@ -505,10 +690,21 @@ int main(int argc, char * argv[]) {
                                             ops[ip] = "convert_o";
                                             break;
                                         }
+                                        case 0x78: // checkfilter
+                                        {
+                                            ops[ip] = "checkfilter";
+                                            break;
+                                        }
                                         case 0x80: // coerce
                                         {
                                             uint32_t index = reader.readU30();
                                             ops[ip] = stringf("coerce (index=%u)", index);
+                                            break;
+                                        }
+                                        case 0x81: // coerce_b
+                                        {
+                                            // not in spec, deprecated
+                                            ops[ip] = "coerce_b";
                                             break;
                                         }
                                         case 0x82: // coerce_a
@@ -516,9 +712,44 @@ int main(int argc, char * argv[]) {
                                             ops[ip] = "coerce_a";
                                             break;
                                         }
+                                        case 0x83: // coerce_i
+                                        {
+                                            // not in spec, deprecated
+                                            ops[ip] = "coerce_i";
+                                            break;
+                                        }
+                                        case 0x84: // coerce_d
+                                        {
+                                            // not in spec, deprecated
+                                            ops[ip] = "coerce_d";
+                                            break;
+                                        }
                                         case 0x85: // coerce_s
                                         {
                                             ops[ip] = "coerce_s";
+                                            break;
+                                        }
+                                        case 0x86: // astype
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            ops[ip] = stringf("astype (index=%u)", index);
+                                            break;
+                                        }
+                                        case 0x87: // astypelate
+                                        {
+                                            ops[ip] = "astypelate";
+                                            break;
+                                        }
+                                        case 0x88: // coerce_u
+                                        {
+                                            // not in spec, deprecated
+                                            ops[ip] = "coerce_u";
+                                            break;
+                                        }
+                                        case 0x89: // coerce_o
+                                        {
+                                            // not in spec, deprecated
+                                            ops[ip] = "coerce_o";
                                             break;
                                         }
                                         case 0x90: // negate
@@ -531,9 +762,21 @@ int main(int argc, char * argv[]) {
                                             ops[ip] = "increment";
                                             break;
                                         }
+                                        case 0x92: // inclocal
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            ops[ip] = stringf("inclocal (index=%u)", index);
+                                            break;
+                                        }
                                         case 0x93: // decrement
                                         {
                                             ops[ip] = "decrement";
+                                            break;
+                                        }
+                                        case 0x94: // declocal
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            ops[ip] = stringf("declocal (index=%u)", index);
                                             break;
                                         }
                                         case 0x95: // typeof
@@ -544,6 +787,11 @@ int main(int argc, char * argv[]) {
                                         case 0x96: // not
                                         {
                                             ops[ip] = "not";
+                                            break;
+                                        }
+                                        case 0x97: // bitnot
+                                        {
+                                            ops[ip] = "bitnot";
                                             break;
                                         }
                                         case 0xa0: // add
@@ -566,9 +814,59 @@ int main(int argc, char * argv[]) {
                                             ops[ip] = "divide";
                                             break;
                                         }
+                                        case 0xa4: // modulo
+                                        {
+                                            ops[ip] = "modulo";
+                                            break;
+                                        }
+                                        case 0xa5: // lshift
+                                        {
+                                            ops[ip] = "lshift";
+                                            break;
+                                        }
+                                        case 0xa6: // rshift
+                                        {
+                                            ops[ip] = "rshift";
+                                            break;
+                                        }
+                                        case 0xa7: // urshift
+                                        {
+                                            ops[ip] = "urshift";
+                                            break;
+                                        }
+                                        case 0xa8: // bitand
+                                        {
+                                            ops[ip] = "bitand";
+                                            break;
+                                        }
+                                        case 0xa9: // bitor
+                                        {
+                                            ops[ip] = "bitor";
+                                            break;
+                                        }
+                                        case 0xaa: // bitxor
+                                        {
+                                            ops[ip] = "bitxor";
+                                            break;
+                                        }
                                         case 0xab: // equals
                                         {
                                             ops[ip] = "equals";
+                                            break;
+                                        }
+                                        case 0xac: // strictequals
+                                        {
+                                            ops[ip] = "strictequals";
+                                            break;
+                                        }
+                                        case 0xad: // lessthan
+                                        {
+                                            ops[ip] = "lessthan";
+                                            break;
+                                        }
+                                        case 0xae: // lessequals
+                                        {
+                                            ops[ip] = "lessequals";
                                             break;
                                         }
                                         case 0xaf: // greaterthan
@@ -581,15 +879,67 @@ int main(int argc, char * argv[]) {
                                             ops[ip] = "greaterequals";
                                             break;
                                         }
+                                        case 0xb1: // instanceof
+                                        {
+                                            ops[ip] = "instanceof";
+                                            break;
+                                        }
+                                        case 0xb2: // istype
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            ops[ip] = stringf("istype (index=%u)", index);
+                                            break;
+                                        }
                                         case 0xb3: // istypelate
                                         {
                                             ops[ip] = "istypelate";
+                                            break;
+                                        }
+                                        case 0xb4: // in
+                                        {
+                                            ops[ip] = "in";
+                                            break;
+                                        }
+                                        case 0xc0: // increment_i
+                                        {
+                                            ops[ip] = "increment_i";
+                                            break;
+                                        }
+                                        case 0xc1: // decrement_i
+                                        {
+                                            ops[ip] = "decrement_i";
                                             break;
                                         }
                                         case 0xc2: // inclocal_i
                                         {
                                             uint32_t index = reader.readU30();
                                             ops[ip] = stringf("inclocal_i (index=%u)", index);
+                                            break;
+                                        }
+                                        case 0xc3: // declocal_i
+                                        {
+                                            uint32_t index = reader.readU30();
+                                            ops[ip] = stringf("declocal_i (index=%u)", index);
+                                            break;
+                                        }
+                                        case 0xc4: // negate_i
+                                        {
+                                            ops[ip] = "negate_i";
+                                            break;
+                                        }
+                                        case 0xc5: // add_i
+                                        {
+                                            ops[ip] = "add_i";
+                                            break;
+                                        }
+                                        case 0xc6: // subtract_i
+                                        {
+                                            ops[ip] = "subtract_i";
+                                            break;
+                                        }
+                                        case 0xc7: // multiply_i
+                                        {
+                                            ops[ip] = "multiply_i";
                                             break;
                                         }
                                         case 0xd0: // getlocal_0 
@@ -638,7 +988,7 @@ int main(int argc, char * argv[]) {
                                             uint32_t index = reader.readU30();
                                             uint8_t reg = reader.readU8();
                                             uint32_t extra = reader.readU30();
-                                            ops[ip] = stringf("debug (type=%u, index=%u, reg=%u, extra=%u)", debug_type, index, reg, extra);
+                                            ops[ip] = stringf("debug \"%s\" (type=%u, index=%u, reg=%u, extra=%u)", abc->cpool.strings[index].data(), debug_type, index, reg, extra);
                                             break;                                            
                                         }
                                         case 0xf0: // debugline
@@ -650,7 +1000,20 @@ int main(int argc, char * argv[]) {
                                         case 0xf1: // debugfile
                                         {
                                             uint32_t index = reader.readU30();
-                                            ops[ip] = stringf("debugfile (index=%u)", index);
+                                            ops[ip] = stringf("debugfile \"%s\" (index=%u)", abc->cpool.strings[index].data(), index);
+                                            break;
+                                        }
+                                        case 0xf2: // bkptline
+                                        {
+                                            // not in spec
+                                            uint32_t linenum = reader.readU30();
+                                            ops[ip] = stringf("bkptline (linenum=%u)", linenum);
+                                            break;
+                                        }
+                                        case 0xf3: // timestamp
+                                        {
+                                            // not in spec
+                                            ops[ip] = "timestamp";
                                             break;
                                         }
                                         default:
@@ -659,8 +1022,9 @@ int main(int argc, char * argv[]) {
                                     }
                                     // normal flow - next operation
                                     ep.push_back(reader.pos());
+                                    for(uint32_t i = ip; i < reader.pos(); ++i) used[i] = true;
                                 }
-                                DEBUG("LISTING:");
+                                DEBUG("LISTING (%u bytes):", (*it).code.size());
                                 for(std::map<uint32_t, std::string>::iterator li = ops.begin(); li != ops.end(); ++li) {
                                     DEBUG("%4u\t%s", (*li).first, (*li).second.data());                                    
                                 }
@@ -671,6 +1035,15 @@ int main(int argc, char * argv[]) {
                             catch(...) {
                                 DEBUG("UNKNOWN EXCEPTION");
                             }
+                            DEBUG("USED:");
+                            uint32_t i = 0;
+                            while(i < used.size()) {
+                                printf("%c", used[i] ? '#' : '%');
+                                ++i;
+                                if(!(i % 32)) printf("\n");
+                            }
+                            printf("\n");
+                            
                             DEBUG(std::string(40, '-'));
                         }
                         

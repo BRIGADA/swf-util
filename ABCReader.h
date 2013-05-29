@@ -33,6 +33,8 @@ public:
     uint32_t pos();
     void pos(uint32_t value);
     bool eof();
+    
+    std::vector<bool> used();
 
 private:
     void readString(std::string& res);
@@ -41,6 +43,7 @@ private:
     void readTraitList(ABCTraitList& res);
 
 protected:
+    std::vector<bool> _used;
     const char * _start;
     const char * _cur;
     const char * _end;

@@ -6,15 +6,18 @@
  */
 
 #include "ABCReader.h"
+#include "utils.h"
 #include <stdio.h>
 #include <algorithm>
 
 #define OOR_EXCEPTION_MESSAGE "data ptr out of range"
 
 ABCReader::ABCReader(const char* data, uint32_t size) : _cur(data), _end(data + size) {
+    _used.resize(size);
 }
 
 ABCReader::ABCReader(const std::string& data) : _start(data.data()), _cur(data.data()), _end(data.data() + data.size()) {
+    _used.resize(data.size());
 }
 
 ABCReader::~ABCReader() {
@@ -318,4 +321,8 @@ ABCFile* ABCReader::read() {
     }
 
     return result;
+}
+
+std::vector<bool> ABCReader::used() {
+    return _used;
 }

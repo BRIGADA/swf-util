@@ -26,7 +26,8 @@
 #include "utils.h"
 #include "ABCOP.h"
 #include <map>
-
+#include <list>
+#include <algorithm>
 
 bool writefile(std::string filename, std::string& content) {
     int fd = open(filename.data(), O_WRONLY | O_CREAT | O_TRUNC, 00666);
@@ -99,28 +100,30 @@ int main(int argc, char * argv[]) {
                             std::string fn = stringf("%s.%04x.body", argv[1], i);
                             DEBUG("%s", fn.data());
                             writefile(fn, (*it).code);
-                            
+
                             ABCReader reader((*it).code);
 
                             std::map<uint32_t, std::string> ops;
-                            
+
+                            std::list<uint32_t> jumps;
+
                             std::vector<bool> used;
                             used.resize((*it).code.size());
-                            
+
                             ABCUI32List ep; // entryPoints
                             ep.push_back(0);
-                            
+
                             try {
-                            
-                                while(!ep.empty()) {
+
+                                while (!ep.empty()) {
                                     uint32_t ip = ep.back();
                                     ep.pop_back();
-//                                    DEBUG("IP=%u", ip);
+                                    //                                    DEBUG("IP=%u", ip);
 
-                                    if(ops.find(ip) != ops.end()) continue;                                
-                                    reader.pos(ip);                                
+                                    if (ops.find(ip) != ops.end()) continue;
+                                    reader.pos(ip);
                                     uint8_t op = reader.readU8();
-                                    switch(op) {
+                                    switch (op) {
                                         case 0x01: // bkpt
                                         {
                                             ops[ip] = "bkpt";
@@ -160,7 +163,7 @@ int main(int argc, char * argv[]) {
                                             break;
                                         }
                                         case 0x08: // kill
-                                            {
+                                        {
                                             uint32_t index = reader.readU30();
                                             ops[ip] = stringf("kill (index=%u)", index);
                                             break;
@@ -174,6 +177,7 @@ int main(int argc, char * argv[]) {
                                         {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
+                                            jumps.push_back(reader.pos() + offset);
                                             ops[ip] = stringf("ifnlt (offset=%d)", offset);
                                             break;
                                         }
@@ -181,6 +185,7 @@ int main(int argc, char * argv[]) {
                                         {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
+                                            jumps.push_back(reader.pos() + offset);
                                             ops[ip] = stringf("ifnle (offset=%d)", offset);
                                             break;
                                         }
@@ -188,6 +193,7 @@ int main(int argc, char * argv[]) {
                                         {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
+                                            jumps.push_back(reader.pos() + offset);
                                             ops[ip] = stringf("ifngt (offset=%d)", offset);
                                             break;
                                         }
@@ -195,6 +201,7 @@ int main(int argc, char * argv[]) {
                                         {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
+                                            jumps.push_back(reader.pos() + offset);
                                             ops[ip] = stringf("ifnge (offset=%d)", offset);
                                             break;
                                         }
@@ -202,7 +209,8 @@ int main(int argc, char * argv[]) {
                                         {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
-                                            ops[ip] = stringf("jump (offset=%d)", offset);
+                                            jumps.push_back(reader.pos() + offset);
+                                            ops[ip] = stringf("jump %u (offset=%d)", reader.pos() + offset, offset);
                                             used[ip + 0] = true;
                                             used[ip + 1] = true;
                                             used[ip + 2] = true;
@@ -213,20 +221,23 @@ int main(int argc, char * argv[]) {
                                         {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
-                                            ops[ip] = stringf("iftrue (offset=%d)", offset);
+                                            jumps.push_back(reader.pos() + offset);
+                                            ops[ip] = stringf("iftrue L%u", reader.pos() + offset);
                                             break;
                                         }
                                         case 0x12: // iffalse
                                         {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
-                                            ops[ip] = stringf("iffalse (offset=%d)", offset);
+                                            jumps.push_back(reader.pos() + offset);
+                                            ops[ip] = stringf("iffalse L%u", reader.pos() + offset);
                                             break;
                                         }
                                         case 0x13: // ifeq
                                         {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
+                                            jumps.push_back(reader.pos() + offset);
                                             ops[ip] = stringf("ifeq (offset=%d)", offset);
                                             break;
                                         }
@@ -234,6 +245,7 @@ int main(int argc, char * argv[]) {
                                         {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
+                                            jumps.push_back(reader.pos() + offset);
                                             ops[ip] = stringf("ifne (offset=%d)", offset);
                                             break;
                                         }
@@ -241,6 +253,7 @@ int main(int argc, char * argv[]) {
                                         {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
+                                            jumps.push_back(reader.pos() + offset);
                                             ops[ip] = stringf("iflt (offset=%d)", offset);
                                             break;
                                         }
@@ -248,6 +261,7 @@ int main(int argc, char * argv[]) {
                                         {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
+                                            jumps.push_back(reader.pos() + offset);
                                             ops[ip] = stringf("ifle (offset=%d)", offset);
                                             break;
                                         }
@@ -255,6 +269,7 @@ int main(int argc, char * argv[]) {
                                         {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
+                                            jumps.push_back(reader.pos() + offset);
                                             ops[ip] = stringf("ifgt (offset=%d)", offset);
                                             break;
                                         }
@@ -262,6 +277,7 @@ int main(int argc, char * argv[]) {
                                         {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
+                                            jumps.push_back(reader.pos() + offset);
                                             ops[ip] = stringf("ifge (offset=%d)", offset);
                                             break;
                                         }
@@ -269,6 +285,7 @@ int main(int argc, char * argv[]) {
                                         {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
+                                            jumps.push_back(reader.pos() + offset);
                                             ops[ip] = stringf("ifstricteq (offset=%d)", offset);
                                             break;
                                         }
@@ -276,6 +293,7 @@ int main(int argc, char * argv[]) {
                                         {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
+                                            jumps.push_back(reader.pos() + offset);
                                             ops[ip] = stringf("ifstrictne (offset=%d)", offset);
                                             break;
                                         }
@@ -283,22 +301,23 @@ int main(int argc, char * argv[]) {
                                         {
                                             int32_t default_offset = reader.readS24();
                                             ep.push_back(ip + default_offset);
-
+                                            jumps.push_back(ip + default_offset);
                                             int32_t case_count = reader.readU30();
                                             case_count++;
-                                            
+
                                             std::string cases;
-                                            
+
                                             do {
                                                 uint32_t case_offset = reader.readS24();
                                                 ep.push_back(ip + case_offset);
-                                                if(!cases.empty()) cases += ", ";
+                                                jumps.push_back(ip + case_offset);
+                                                if (!cases.empty()) cases += ", ";
                                                 cases += stringf("%d", case_offset);
                                             } while (case_count--);
 
                                             ops[ip] = stringf("lookupswitch (default=%d, cases=[%s])", default_offset, cases.data());
-                                            for(uint32_t i = ip; i < reader.pos(); ++i) used[i] = true;
-                                            
+                                            for (uint32_t i = ip; i < reader.pos(); ++i) used[i] = true;
+
                                             continue;
                                         }
                                         case 0x1c: // pushwith
@@ -381,7 +400,7 @@ int main(int argc, char * argv[]) {
                                         case 0x2c: // pushstring
                                         {
                                             uint32_t index = reader.readU30();
-                                            
+
                                             ops[ip] = stringf("pushstring \"%s\" (index=%d)", abc->cpool.strings[index].data(), index);
                                             break;
                                         }
@@ -431,13 +450,13 @@ int main(int argc, char * argv[]) {
                                         {
                                             uint32_t argcount = reader.readU30();
                                             ops[ip] = stringf("call (argcount=%u)", argcount);
-                                            break;                                            
+                                            break;
                                         }
                                         case 0x42: // construct
                                         {
                                             uint32_t argcount = reader.readU30();
                                             ops[ip] = stringf("construct (argcount=%u)", argcount);
-                                            break;                                            
+                                            break;
                                         }
                                         case 0x43: // callmethod
                                         {
@@ -483,7 +502,7 @@ int main(int argc, char * argv[]) {
                                         {
                                             uint32_t argcount = reader.readU30();
                                             ops[ip] = stringf("constructsuper (argcount=%u)", argcount);
-                                            break;                                            
+                                            break;
                                         }
                                         case 0x4a: // constructprop
                                         {
@@ -558,20 +577,20 @@ int main(int argc, char * argv[]) {
                                         {
                                             uint32_t index = reader.readU30();
                                             ops[ip] = stringf("findpropstrict (index=%u)", index);
-                                            break;                                            
+                                            break;
                                         }
                                         case 0x5e: // findproperty
                                         {
                                             uint32_t index = reader.readU30();
                                             ops[ip] = stringf("findproperty (index=%u)", index);
-                                            break;                                            
+                                            break;
                                         }
                                         case 0x5f: // finddef
                                         {
                                             // not in spec
                                             uint32_t index = reader.readU30();
                                             ops[ip] = stringf("finddef (index=%u)", index);
-                                            break;                                            
+                                            break;
                                         }
                                         case 0x60: // getlex
                                         {
@@ -949,7 +968,7 @@ int main(int argc, char * argv[]) {
                                         }
                                         case 0xd1: // getlocal_1                                        
                                         {
-                                            ops[ip] = "getlocal_1";                                            
+                                            ops[ip] = "getlocal_1";
                                             break;
                                         }
                                         case 0xd2: // getlocal_2                                        
@@ -989,7 +1008,7 @@ int main(int argc, char * argv[]) {
                                             uint8_t reg = reader.readU8();
                                             uint32_t extra = reader.readU30();
                                             ops[ip] = stringf("debug \"%s\" (type=%u, index=%u, reg=%u, extra=%u)", abc->cpool.strings[index].data(), debug_type, index, reg, extra);
-                                            break;                                            
+                                            break;
                                         }
                                         case 0xf0: // debugline
                                         {
@@ -1022,43 +1041,46 @@ int main(int argc, char * argv[]) {
                                     }
                                     // normal flow - next operation
                                     ep.push_back(reader.pos());
-                                    for(uint32_t i = ip; i < reader.pos(); ++i) used[i] = true;
+                                    for (uint32_t i = ip; i < reader.pos(); ++i) used[i] = true;
                                 }
                                 DEBUG("LISTING (%u bytes):", (*it).code.size());
-                                for(std::map<uint32_t, std::string>::iterator li = ops.begin(); li != ops.end(); ++li) {
-                                    DEBUG("%4u\t%s", (*li).first, (*li).second.data());                                    
+                                jumps.unique();
+                                for (std::map<uint32_t, std::string>::iterator li = ops.begin(); li != ops.end(); ++li) {
+                                    if(std::find(jumps.begin(), jumps.end(), (*li).first) != jumps.end()) {
+                                        DEBUG("L%u:", (*li).first);
+                                    }
+//                                    DEBUG("%4u\t%s", (*li).first, (*li).second.data());
+                                    DEBUG("\t%s", (*li).second.data());
                                 }
-                            }
-                            catch(const char * e) {
+                            }                            catch (const char * e) {
                                 DEBUG("EXCEPTION: %s", e);
-                            }
-                            catch(...) {
+                            }                            catch (...) {
                                 DEBUG("UNKNOWN EXCEPTION");
                             }
                             DEBUG("USED:");
                             uint32_t i = 0;
-                            while(i < used.size()) {
+                            while (i < used.size()) {
                                 printf("%c", used[i] ? '#' : '%');
                                 ++i;
-                                if(!(i % 32)) printf("\n");
+                                if (!(i % 32)) printf("\n");
                             }
                             printf("\n");
-                            
+
                             DEBUG(std::string(40, '-'));
                         }
-                        
-//                        for (ABCInstanceList::iterator it = abc->instances.begin(); it != abc->instances.end(); ++it) {
-//                            if (abc->cpool.multinames[(*it).name].kind == CONSTANT_QName) {
-//                                printf("package %s\n", abc->cpool.strings[abc->cpool.namespaces[abc->cpool.multinames[(*it).name].ns].name].data());
-//                                printf("{\n");
-//                                if ((*it).super) {
-//                                    printf("  class %s extends %s\n", abc->cpool.strings[abc->cpool.multinames[(*it).name].name].data(), abc->cpool.strings[abc->cpool.multinames[(*it).super].name].data());
-//                                } else {
-//                                    printf("  class %s\n", abc->cpool.strings[abc->cpool.multinames[(*it).name].name].data());
-//                                }
-//                                printf("}\n\n");
-//                            } else throw "Unknown class name type";
-//                        }
+
+                        //                        for (ABCInstanceList::iterator it = abc->instances.begin(); it != abc->instances.end(); ++it) {
+                        //                            if (abc->cpool.multinames[(*it).name].kind == CONSTANT_QName) {
+                        //                                printf("package %s\n", abc->cpool.strings[abc->cpool.namespaces[abc->cpool.multinames[(*it).name].ns].name].data());
+                        //                                printf("{\n");
+                        //                                if ((*it).super) {
+                        //                                    printf("  class %s extends %s\n", abc->cpool.strings[abc->cpool.multinames[(*it).name].name].data(), abc->cpool.strings[abc->cpool.multinames[(*it).super].name].data());
+                        //                                } else {
+                        //                                    printf("  class %s\n", abc->cpool.strings[abc->cpool.multinames[(*it).name].name].data());
+                        //                                }
+                        //                                printf("}\n\n");
+                        //                            } else throw "Unknown class name type";
+                        //                        }
                     }
                     break;
                 }

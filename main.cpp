@@ -101,6 +101,8 @@ int main(int argc, char * argv[]) {
                             DEBUG("%s", fn.data());
                             writefile(fn, (*it).code);
 
+                            bool stop = false;
+                            
                             ABCReader reader((*it).code);
 
                             std::map<uint32_t, std::string> ops;
@@ -137,7 +139,8 @@ int main(int argc, char * argv[]) {
                                         case 0x03: // throw
                                         {
                                             ops[ip] = "throw";
-                                            break;
+                                            used[ip] = true;
+                                            continue;
                                         }
                                         case 0x04: // getsuper
                                         {
@@ -154,7 +157,7 @@ int main(int argc, char * argv[]) {
                                         case 0x06: // dxns
                                         {
                                             uint32_t index = reader.readU30();
-                                            ops[ip] = stringf("dxns (index=%u)", index);
+                                            ops[ip] = stringf("dxns \"%s\"", abc->cpool.strings[index].data());
                                             break;
                                         }
                                         case 0x07: // dxnslate
@@ -165,7 +168,7 @@ int main(int argc, char * argv[]) {
                                         case 0x08: // kill
                                         {
                                             uint32_t index = reader.readU30();
-                                            ops[ip] = stringf("kill (index=%u)", index);
+                                            ops[ip] = stringf("kill %u", index);
                                             break;
                                         }
                                         case 0x09: // label
@@ -178,7 +181,7 @@ int main(int argc, char * argv[]) {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
                                             jumps.push_back(reader.pos() + offset);
-                                            ops[ip] = stringf("ifnlt (offset=%d)", offset);
+                                            ops[ip] = stringf("ifnlt L%u", reader.pos() + offset);
                                             break;
                                         }
                                         case 0x0d: // ifnle
@@ -186,7 +189,7 @@ int main(int argc, char * argv[]) {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
                                             jumps.push_back(reader.pos() + offset);
-                                            ops[ip] = stringf("ifnle (offset=%d)", offset);
+                                            ops[ip] = stringf("ifnle L%u", reader.pos() + offset);
                                             break;
                                         }
                                         case 0x0e: // ifngt
@@ -194,7 +197,7 @@ int main(int argc, char * argv[]) {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
                                             jumps.push_back(reader.pos() + offset);
-                                            ops[ip] = stringf("ifngt (offset=%d)", offset);
+                                            ops[ip] = stringf("ifngt L%u", reader.pos() + offset);
                                             break;
                                         }
                                         case 0x0f: // ifnge
@@ -202,7 +205,7 @@ int main(int argc, char * argv[]) {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
                                             jumps.push_back(reader.pos() + offset);
-                                            ops[ip] = stringf("ifnge (offset=%d)", offset);
+                                            ops[ip] = stringf("ifnge L%u", reader.pos() + offset);
                                             break;
                                         }
                                         case 0x10: // jump
@@ -210,7 +213,7 @@ int main(int argc, char * argv[]) {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
                                             jumps.push_back(reader.pos() + offset);
-                                            ops[ip] = stringf("jump %u (offset=%d)", reader.pos() + offset, offset);
+                                            ops[ip] = stringf("jump L%u", reader.pos() + offset);
                                             used[ip + 0] = true;
                                             used[ip + 1] = true;
                                             used[ip + 2] = true;
@@ -238,7 +241,7 @@ int main(int argc, char * argv[]) {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
                                             jumps.push_back(reader.pos() + offset);
-                                            ops[ip] = stringf("ifeq (offset=%d)", offset);
+                                            ops[ip] = stringf("ifeq L%u", reader.pos() + offset);
                                             break;
                                         }
                                         case 0x14: // ifne
@@ -246,7 +249,7 @@ int main(int argc, char * argv[]) {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
                                             jumps.push_back(reader.pos() + offset);
-                                            ops[ip] = stringf("ifne (offset=%d)", offset);
+                                            ops[ip] = stringf("ifne L%u", reader.pos() + offset);
                                             break;
                                         }
                                         case 0x15: // iflt
@@ -254,7 +257,7 @@ int main(int argc, char * argv[]) {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
                                             jumps.push_back(reader.pos() + offset);
-                                            ops[ip] = stringf("iflt (offset=%d)", offset);
+                                            ops[ip] = stringf("iflt L%u", reader.pos() + offset);
                                             break;
                                         }
                                         case 0x16: // ifle
@@ -262,7 +265,7 @@ int main(int argc, char * argv[]) {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
                                             jumps.push_back(reader.pos() + offset);
-                                            ops[ip] = stringf("ifle (offset=%d)", offset);
+                                            ops[ip] = stringf("ifle L%u", reader.pos() + offset);
                                             break;
                                         }
                                         case 0x17: // ifgt
@@ -270,7 +273,7 @@ int main(int argc, char * argv[]) {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
                                             jumps.push_back(reader.pos() + offset);
-                                            ops[ip] = stringf("ifgt (offset=%d)", offset);
+                                            ops[ip] = stringf("ifgt L%u", reader.pos() + offset);
                                             break;
                                         }
                                         case 0x18: // ifge
@@ -278,7 +281,7 @@ int main(int argc, char * argv[]) {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
                                             jumps.push_back(reader.pos() + offset);
-                                            ops[ip] = stringf("ifge (offset=%d)", offset);
+                                            ops[ip] = stringf("ifge L%u", reader.pos() + offset);
                                             break;
                                         }
                                         case 0x19: // ifstricteq
@@ -286,7 +289,7 @@ int main(int argc, char * argv[]) {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
                                             jumps.push_back(reader.pos() + offset);
-                                            ops[ip] = stringf("ifstricteq (offset=%d)", offset);
+                                            ops[ip] = stringf("ifstricteq L%u", reader.pos() + offset);
                                             break;
                                         }
                                         case 0x1a: // ifstrictne
@@ -294,7 +297,7 @@ int main(int argc, char * argv[]) {
                                             int32_t offset = reader.readS24();
                                             ep.push_back(reader.pos() + offset);
                                             jumps.push_back(reader.pos() + offset);
-                                            ops[ip] = stringf("ifstrictne (offset=%d)", offset);
+                                            ops[ip] = stringf("ifstrictne L%u", reader.pos() + offset);
                                             break;
                                         }
                                         case 0x1b: // lookupswitch
@@ -303,7 +306,6 @@ int main(int argc, char * argv[]) {
                                             ep.push_back(ip + default_offset);
                                             jumps.push_back(ip + default_offset);
                                             int32_t case_count = reader.readU30();
-                                            case_count++;
 
                                             std::string cases;
 
@@ -312,12 +314,12 @@ int main(int argc, char * argv[]) {
                                                 ep.push_back(ip + case_offset);
                                                 jumps.push_back(ip + case_offset);
                                                 if (!cases.empty()) cases += ", ";
-                                                cases += stringf("%d", case_offset);
+                                                cases += stringf("L%d", ip + case_offset);
                                             } while (case_count--);
 
-                                            ops[ip] = stringf("lookupswitch (default=%d, cases=[%s])", default_offset, cases.data());
+                                            ops[ip] = stringf("lookupswitch L%u, [%s]", ip + default_offset, cases.data());
+                                            
                                             for (uint32_t i = ip; i < reader.pos(); ++i) used[i] = true;
-
                                             continue;
                                         }
                                         case 0x1c: // pushwith
@@ -358,13 +360,13 @@ int main(int argc, char * argv[]) {
                                         case 0x24: // pushbyte
                                         {
                                             uint8_t value = reader.readU8();
-                                            ops[ip] = stringf("pushbyte (value=%u)", value);
+                                            ops[ip] = stringf("pushbyte %u", value);
                                             break;
                                         }
                                         case 0x25: // pushshort
                                         {
                                             uint32_t value = reader.readU30();
-                                            ops[ip] = stringf("pushshort (value=%u)", value);
+                                            ops[ip] = stringf("pushshort %u", value);
                                             break;
                                         }
                                         case 0x26: // pushtrue
@@ -407,19 +409,19 @@ int main(int argc, char * argv[]) {
                                         case 0x2d: // pushint
                                         {
                                             uint32_t index = reader.readU30();
-                                            ops[ip] = stringf("pushint (index=%u)", index);
+                                            ops[ip] = stringf("pushint %d", abc->cpool.ints[index]);
                                             break;
                                         }
                                         case 0x2e: // pushuint
                                         {
                                             uint32_t index = reader.readU30();
-                                            ops[ip] = stringf("pushuint (index=%u)", index);
+                                            ops[ip] = stringf("pushuint %u", abc->cpool.ints[index]);
                                             break;
                                         }
                                         case 0x2f: // pushdouble
                                         {
                                             uint32_t index = reader.readU30();
-                                            ops[ip] = stringf("pushdouble (index=%u)", index);
+                                            ops[ip] = stringf("pushdouble %f", abc->cpool.doubles[index]);
                                             break;
                                         }
                                         case 0x30: // pushscope
@@ -1013,13 +1015,13 @@ int main(int argc, char * argv[]) {
                                         case 0xf0: // debugline
                                         {
                                             uint32_t linenum = reader.readU30();
-                                            ops[ip] = stringf("debugline (linenum=%u)", linenum);
+                                            ops[ip] = stringf("debugline %u", linenum);
                                             break;
                                         }
                                         case 0xf1: // debugfile
                                         {
                                             uint32_t index = reader.readU30();
-                                            ops[ip] = stringf("debugfile \"%s\" (index=%u)", abc->cpool.strings[index].data(), index);
+                                            ops[ip] = stringf("debugfile \"%s\"", abc->cpool.strings[index].data(), index);
                                             break;
                                         }
                                         case 0xf2: // bkptline
@@ -1043,20 +1045,15 @@ int main(int argc, char * argv[]) {
                                     ep.push_back(reader.pos());
                                     for (uint32_t i = ip; i < reader.pos(); ++i) used[i] = true;
                                 }
-                                DEBUG("LISTING (%u bytes):", (*it).code.size());
                                 jumps.unique();
-                                for (std::map<uint32_t, std::string>::iterator li = ops.begin(); li != ops.end(); ++li) {
-                                    if(std::find(jumps.begin(), jumps.end(), (*li).first) != jumps.end()) {
-                                        DEBUG("L%u:", (*li).first);
-                                    }
-//                                    DEBUG("%4u\t%s", (*li).first, (*li).second.data());
-                                    DEBUG("\t%s", (*li).second.data());
-                                }
-                            }                            catch (const char * e) {
+                            } catch (const char * e) {
                                 DEBUG("EXCEPTION: %s", e);
-                            }                            catch (...) {
+                                stop = true;
+                            } catch (...) {
                                 DEBUG("UNKNOWN EXCEPTION");
+                                stop = true;
                             }
+
                             DEBUG("USED:");
                             uint32_t i = 0;
                             while (i < used.size()) {
@@ -1065,6 +1062,17 @@ int main(int argc, char * argv[]) {
                                 if (!(i % 32)) printf("\n");
                             }
                             printf("\n");
+
+                            DEBUG("LISTING (%u bytes):", (*it).code.size());
+                            for (std::map<uint32_t, std::string>::iterator li = ops.begin(); li != ops.end(); ++li) {
+                                if(std::find(jumps.begin(), jumps.end(), (*li).first) != jumps.end()) {
+                                    DEBUG("L%u:", (*li).first);
+                                }
+                                DEBUG("\t%s", (*li).second.data());
+//                                DEBUG("%4u\t%s", (*li).first, (*li).second.data());
+                            }
+                            
+                            if(stop) exit(-1);
 
                             DEBUG(std::string(40, '-'));
                         }

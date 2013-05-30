@@ -65,11 +65,11 @@ LDLIBSOPTIONS=
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
-	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/swf-util
+	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/uswf
 
-${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/swf-util: ${OBJECTFILES}
+${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/uswf: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
-	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/swf-util ${OBJECTFILES} ${LDLIBSOPTIONS}
+	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/uswf ${OBJECTFILES} ${LDLIBSOPTIONS}
 
 ${OBJECTDIR}/ABCFile.o: ABCFile.cpp 
 	${MKDIR} -p ${OBJECTDIR}
@@ -127,7 +127,7 @@ ${OBJECTDIR}/utils.o: utils.cpp
 # Clean Targets
 .clean-conf: ${CLEAN_SUBPROJECTS}
 	${RM} -r ${CND_BUILDDIR}/${CND_CONF}
-	${RM} ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/swf-util
+	${RM} ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/uswf
 
 # Subprojects
 .clean-subprojects:

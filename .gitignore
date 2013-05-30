@@ -12,6 +12,7 @@
 *.la
 *.a
 
-Debug/*
+/examples/*
+!/examples/*.swf
 /build/
 /dist/

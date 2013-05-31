@@ -45,6 +45,8 @@
                    kind="IMPORTANT_FILES_FOLDER">
       <itemPath>Makefile</itemPath>
     </logicalFolder>
+    <itemPath>ABCVM.cpp</itemPath>
+    <itemPath>ABCVM.h</itemPath>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -75,6 +77,10 @@
       <item path="ABCReader.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="ABCTypes.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="ABCVM.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="ABCVM.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="DataReader.cpp" ex="false" tool="1" flavor2="0">
       </item>
@@ -139,6 +145,10 @@
       <item path="ABCReader.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="ABCTypes.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="ABCVM.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="ABCVM.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="DataReader.cpp" ex="false" tool="1" flavor2="0">
       </item>

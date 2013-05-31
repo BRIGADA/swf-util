@@ -38,6 +38,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/ABCFile.o \
 	${OBJECTDIR}/ABCOP.o \
 	${OBJECTDIR}/ABCReader.o \
+	${OBJECTDIR}/ABCVM.o \
 	${OBJECTDIR}/DataReader.o \
 	${OBJECTDIR}/SWFFile.o \
 	${OBJECTDIR}/SWFTag.o \
@@ -85,6 +86,11 @@ ${OBJECTDIR}/ABCReader.o: ABCReader.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/ABCReader.o ABCReader.cpp
+
+${OBJECTDIR}/ABCVM.o: ABCVM.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/ABCVM.o ABCVM.cpp
 
 ${OBJECTDIR}/DataReader.o: DataReader.cpp 
 	${MKDIR} -p ${OBJECTDIR}

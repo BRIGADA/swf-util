@@ -106,12 +106,24 @@ int main(int argc, char * argv[]) {
 
                             std::map<uint32_t, std::string> ops;
                             std::vector<bool> used;
+                            used.resize((*it).code.size());
                             std::list<uint32_t> jumps;
 
                             ABCVM VM(abc->cpool);
 
-                            VM.disassemble((*it).code, 0, ops, jumps, used);
+                            VM.disassemble((*it).code, 0, ops, used, jumps);
 
+                            
+                            if(!(*it).exceptions.empty()) {                            
+                                DEBUG("EXCEPTION COUNT: %u", (*it).exceptions.size());
+                                for(ABCExceptionList::iterator e = (*it).exceptions.begin(); e != (*it).exceptions.end(); ++e) {
+                                    DEBUG("[%u ... %u]->%u, type=%s, name=%s", (*e).from, (*e).to, (*e).target, (*e).type ? abc->cpool.getName((*e).type).data() : "*", (*e).name ? abc->cpool.getName((*e).name).data() : "*");
+                                    jumps.push_back(e->target);
+                                    VM.disassemble((*it).code, e->target, ops, used, jumps);
+//                                    DEBUG("from=%u, to=%u, target=%u, type=%s, name=%s", (*e).from, (*e).to, (*e).target, abc->cpool.getSTR((*e).type).data(), abc->cpool.getSTR((*e).name).data());
+                                }
+                            }
+                            
                             DEBUG("USED:");
                             uint32_t i = 0;
                             while (i < used.size()) {

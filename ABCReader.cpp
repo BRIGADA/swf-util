@@ -315,7 +315,7 @@ ABCFile* ABCReader::read() {
             (*b).to = readU30();
             (*b).target = readU30();
             (*b).type = readU30();
-            (*b).varName = readU30();
+            (*b).name = readU30();
         }
         readTraitList((*a).traits);
     }

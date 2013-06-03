@@ -229,25 +229,25 @@ typedef std::vector<ABCScript> ABCScriptList;
  * instructions over which a particular exception handler is engaged.
  */
 struct ABCException {
-    uint32_t from;      /* The starting position in the code field from which
+    uint32_t from; /* The starting position in the code field from which
                          * the exception is enabled. */
 
-    uint32_t to;        /* The ending position in the code field after which
+    uint32_t to; /* The ending position in the code field after which
                          * the exception is disabled. */
 
-    uint32_t target;    /* The position in the code field to which control
+    uint32_t target; /* The position in the code field to which control
                          * should jump if an exception of type exc_type is
                          * encountered while executing instructions that lie
                          * within the region [from, to] of the code field. */
 
-    uint32_t type;      /* An index into the string array of the constant pool
+    uint32_t type; /* An index into the string array of the constant pool
                          * that identifies the name of the type of exception
                          * that is to be monitored during the reign of this
                          * handler. A value of zero means the any type (“*”)
                          * and implies that this exception handler will catch
                          * any type of exception thrown. */
 
-    uint32_t varName;   /* This index into the string array of the constant
+    uint32_t name; /* This index into the string array of the constant
                          * pool defines the name of the variable that is to
                          * receive the exception object when the exception is
                          * thrown and control is transferred to target location.
@@ -278,6 +278,11 @@ struct ABCConstantPool {
     ABCNamespaceList namespaces;
     ABCNamespaceSetList namespaceSets;
     ABCMultinameList multinames;
+
+    std::string getSTR(uint32_t index, bool quote = false);
+    std::string getNS(uint32_t index);
+    std::string getNSS(uint32_t index);
+    std::string getName(uint32_t index);
 };
 
 #endif /* ABCTYPES_H_ */

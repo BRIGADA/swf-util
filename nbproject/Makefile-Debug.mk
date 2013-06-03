@@ -38,6 +38,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/ABCFile.o \
 	${OBJECTDIR}/ABCOP.o \
 	${OBJECTDIR}/ABCReader.o \
+	${OBJECTDIR}/ABCTypes.o \
 	${OBJECTDIR}/ABCVM.o \
 	${OBJECTDIR}/DataReader.o \
 	${OBJECTDIR}/SWFFile.o \
@@ -86,6 +87,11 @@ ${OBJECTDIR}/ABCReader.o: ABCReader.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
 	$(COMPILE.cc) -g `pkg-config --cflags zlib`   -MMD -MP -MF $@.d -o ${OBJECTDIR}/ABCReader.o ABCReader.cpp
+
+${OBJECTDIR}/ABCTypes.o: ABCTypes.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -g `pkg-config --cflags zlib`   -MMD -MP -MF $@.d -o ${OBJECTDIR}/ABCTypes.o ABCTypes.cpp
 
 ${OBJECTDIR}/ABCVM.o: ABCVM.cpp 
 	${MKDIR} -p ${OBJECTDIR}

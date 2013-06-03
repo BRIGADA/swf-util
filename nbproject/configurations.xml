@@ -7,6 +7,7 @@
       <itemPath>ABCFile.cpp</itemPath>
       <itemPath>ABCOP.cpp</itemPath>
       <itemPath>ABCReader.cpp</itemPath>
+      <itemPath>ABCTypes.cpp</itemPath>
       <itemPath>DataReader.cpp</itemPath>
       <itemPath>SWFFile.cpp</itemPath>
       <itemPath>SWFTag.cpp</itemPath>
@@ -76,6 +77,8 @@
       </item>
       <item path="ABCReader.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="ABCTypes.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="ABCTypes.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="ABCVM.cpp" ex="false" tool="1" flavor2="0">
@@ -143,6 +146,8 @@
       <item path="ABCReader.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="ABCReader.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="ABCTypes.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="ABCTypes.h" ex="false" tool="3" flavor2="0">
       </item>

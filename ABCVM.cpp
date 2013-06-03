@@ -513,13 +513,13 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x62: // getlocal
                 {
                     uint32_t index = reader.readU30();
-                    output[ip] = stringf("getlocal       (index=%u)", index);
+                    output[ip] = stringf("getlocal       %u", index);
                     break;
                 }
                 case 0x63: // setlocal
                 {
                     uint32_t index = reader.readU30();
-                    output[ip] = stringf("setlocal       (index=%u)", index);
+                    output[ip] = stringf("setlocal       %u", index);
                     break;
                 }
                 case 0x64: // getglobalscope
@@ -623,7 +623,7 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x80: // coerce
                 {
                     uint32_t index = reader.readU30();
-                    output[ip] = stringf("coerce         (index=%u)", index);
+                    output[ip] = stringf("coerce         %s", _cpool.getName(index).data());
                     break;
                 }
                 case 0x81: // coerce_b
@@ -954,7 +954,7 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
         output[ip] = stringf("EXCEPTION: %s", e);
         return false;
     } catch (...) {
-        output[ip] = stringf("UNKNOWN EXCEPTION");
+        output[ip] = stringf("%s - UNKNOWN EXCEPTION", __FILE__);
         return false;
     }
     return true;

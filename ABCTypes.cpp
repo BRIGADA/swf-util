@@ -55,7 +55,7 @@ std::string ABCConstantPool::getName(uint32_t index) {
     if (index >= multinames.size()) {
         throw "MULTINAME OUT OF RANGE";
     }
-
+    
     switch (multinames[index].kind) {
         case CONSTANT_QName:
             return "QName(" + getNS(multinames[index].ns) + ", " + getSTR(multinames[index].name, true) + ")";

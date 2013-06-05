@@ -54,7 +54,22 @@ void PRINTBITS(uint8_t * ptr, uint8_t count) {
     }
 }
 
+class A 
+{ 
+public: 
+    virtual void t(int a = 2) {std::cout << "A: "<<a;} 
+}; 
+
+class B : public A 
+{ 
+public: 
+    void t(int b = 8) {std::cout << "B: "<<b;} 
+}; 
+
 int main(int argc, char * argv[]) {
+        static_cast< B * >(new A())->t(); 
+                return 0; 
+ 
     if (argc == 1) return -1;
     SWFFile swf;
     if (swf.load(argv[1])) {

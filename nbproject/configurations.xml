@@ -48,7 +48,6 @@
     </logicalFolder>
     <itemPath>ABCVM.cpp</itemPath>
     <itemPath>ABCVM.h</itemPath>
-    <itemPath>VMValue.cpp</itemPath>
     <itemPath>VMValue.h</itemPath>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>
@@ -108,8 +107,6 @@
       <item path="SWFTagMetadata.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="SWFTagMetadata.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="VMValue.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="VMValue.h" ex="false" tool="3" flavor2="0">
       </item>
@@ -182,8 +179,6 @@
       <item path="SWFTagMetadata.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="SWFTagMetadata.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="VMValue.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="VMValue.h" ex="false" tool="3" flavor2="0">
       </item>

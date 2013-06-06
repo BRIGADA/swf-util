@@ -17,6 +17,7 @@ public:
     ABCVM(ABCConstantPool& cpool);
     virtual ~ABCVM();
     bool disassemble(std::string& code, uint32_t start, std::map<uint32_t, std::string>& output, std::vector<bool>& used, std::list<uint32_t>& jumps);
+    bool decompile(std::string& code, std::list<uint32_t> entryPoint);
 private:
     ABCConstantPool& _cpool;
 

@@ -8,13 +8,15 @@
 #include "ABCVM.h"
 #include "utils.h"
 #include "ABCReader.h"
+#include "VMValue.h"
+#include <memory>
 
 ABCVM::ABCVM(ABCConstantPool& cpool) : _cpool(cpool) {
 }
 
 bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, std::string>& output, std::vector<bool>& used, std::list<uint32_t>& jumps) {
     ABCReader reader(code);
-    
+
     uint32_t ip = start;
     ABCUI32List ep; // entryPoints
     ep.push_back(ip);
@@ -117,7 +119,7 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                     ep.push_back(reader.pos() + offset);
                     jumps.push_back(reader.pos() + offset);
                     output[ip] = stringf("jump           L%u", reader.pos() + offset);
-//                    break;
+                    //                    break;
                     used[ip + 0] = true;
                     used[ip + 1] = true;
                     used[ip + 2] = true;
@@ -963,3 +965,12 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
 ABCVM::~ABCVM() {
 }
 
+bool ABCVM::decompile(std::string& code, std::list<uint32_t> entryPoint) {
+    std::vector< VMValue* > STACK;
+    
+    STACK.push_back(new VMValueNULL(-1));
+    STACK.push_back(new VMValueNumber(100, -1));
+    
+//    std::vector<VMValue> LOCAL;
+    return false;
+}

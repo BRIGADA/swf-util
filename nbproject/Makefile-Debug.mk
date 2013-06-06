@@ -45,7 +45,6 @@ OBJECTFILES= \
 	${OBJECTDIR}/SWFTag.o \
 	${OBJECTDIR}/SWFTagFileAttributes.o \
 	${OBJECTDIR}/SWFTagMetadata.o \
-	${OBJECTDIR}/VMValue.o \
 	${OBJECTDIR}/main.o \
 	${OBJECTDIR}/utils.o
 
@@ -123,11 +122,6 @@ ${OBJECTDIR}/SWFTagMetadata.o: SWFTagMetadata.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
 	$(COMPILE.cc) -g `pkg-config --cflags zlib`   -MMD -MP -MF $@.d -o ${OBJECTDIR}/SWFTagMetadata.o SWFTagMetadata.cpp
-
-${OBJECTDIR}/VMValue.o: VMValue.cpp 
-	${MKDIR} -p ${OBJECTDIR}
-	${RM} $@.d
-	$(COMPILE.cc) -g `pkg-config --cflags zlib`   -MMD -MP -MF $@.d -o ${OBJECTDIR}/VMValue.o VMValue.cpp
 
 ${OBJECTDIR}/main.o: main.cpp 
 	${MKDIR} -p ${OBJECTDIR}

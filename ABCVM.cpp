@@ -966,10 +966,12 @@ ABCVM::~ABCVM() {
 }
 
 bool ABCVM::decompile(std::string& code, std::list<uint32_t> entryPoint) {
-    std::vector< VMValue* > STACK;
+    std::vector< VMValue > STACK;
+    std::vector< std::string > SCOPE;
     
-    STACK.push_back(new VMValueNULL(-1));
-    STACK.push_back(new VMValueNumber(100, -1));
+    STACK.push_back(VMValue(0, vtNumber, 10));
+//    STACK.push_back(new VMValueNULL(-1));
+//    STACK.push_back(new VMValueNumber(100, -1));
     
 //    std::vector<VMValue> LOCAL;
     return false;

@@ -55,6 +55,8 @@ void PRINTBITS(uint8_t * ptr, uint8_t count) {
 }
 
 int main(int argc, char * argv[]) {
+
+
     if (argc == 1) return -1;
     SWFFile swf;
     if (swf.load(argv[1])) {
@@ -113,17 +115,19 @@ int main(int argc, char * argv[]) {
 
                             VM.disassemble((*it).code, 0, ops, used, jumps);
 
-                            
-                            if(!(*it).exceptions.empty()) {                            
+
+                            if (!(*it).exceptions.empty()) {
                                 DEBUG("EXCEPTION COUNT: %u", (*it).exceptions.size());
-                                for(ABCExceptionList::iterator e = (*it).exceptions.begin(); e != (*it).exceptions.end(); ++e) {
+                                for (ABCExceptionList::iterator e = (*it).exceptions.begin(); e != (*it).exceptions.end(); ++e) {
                                     DEBUG("[%u ... %u]->%u, type=%s, name=%s", (*e).from, (*e).to, (*e).target, (*e).type ? abc->cpool.getName((*e).type).data() : "*", (*e).name ? abc->cpool.getName((*e).name).data() : "*");
+                                    jumps.push_back(e->from);
+                                    jumps.push_back(e->to);
                                     jumps.push_back(e->target);
                                     VM.disassemble((*it).code, e->target, ops, used, jumps);
-//                                    DEBUG("from=%u, to=%u, target=%u, type=%s, name=%s", (*e).from, (*e).to, (*e).target, abc->cpool.getSTR((*e).type).data(), abc->cpool.getSTR((*e).name).data());
+                                    //                                    DEBUG("from=%u, to=%u, target=%u, type=%s, name=%s", (*e).from, (*e).to, (*e).target, abc->cpool.getSTR((*e).type).data(), abc->cpool.getSTR((*e).name).data());
                                 }
                             }
-                            
+
                             DEBUG("USED:");
                             uint32_t i = 0;
                             while (i < used.size()) {
@@ -136,9 +140,10 @@ int main(int argc, char * argv[]) {
                             DEBUG("LISTING (%u bytes):", (*it).code.size());
                             for (std::map<uint32_t, std::string>::iterator li = ops.begin(); li != ops.end(); ++li) {
                                 if (std::find(jumps.begin(), jumps.end(), (*li).first) != jumps.end()) {
-                                    DEBUG("L%u:", (*li).first);
+                                    DEBUG("L%u:\t%s", (*li).first, li->second.data());
+                                } else {
+                                    DEBUG("\t%s", (*li).second.data());
                                 }
-                                DEBUG("\t%s", (*li).second.data());
                                 //                                DEBUG("%4u\t%s", (*li).first, (*li).second.data());
                             }
 

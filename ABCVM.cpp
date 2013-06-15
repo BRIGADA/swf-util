@@ -10,17 +10,25 @@
 #include "ABCReader.h"
 #include "VMValue.h"
 #include <memory>
+#include <set>
+
+typedef struct {
+    uint8_t kind; // 0 - normal, 1 - exit, 2 - condition, 3 - jump, 4 - switch
+    ABCUI32List params;
+} ABCOPFlow;
 
 ABCVM::ABCVM(ABCConstantPool& cpool) : _cpool(cpool) {
 }
 
 bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, std::string>& output, std::vector<bool>& used, std::list<uint32_t>& jumps) {
     ABCReader reader(code);
-
+    
+    std::map<uint32_t, ABCOPFlow > flow; // from => to;
+    
     uint32_t ip = start;
     ABCUI32List ep; // entryPoints
     ep.push_back(ip);
-
+    
     try {
 
         while (!ep.empty()) {
@@ -28,6 +36,7 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
             ep.pop_back();
 
             if (output.find(ip) != output.end()) continue;
+            flow[ip].kind = 0;
             reader.pos(ip);
             uint8_t op = reader.readU8();
             switch (op) {
@@ -45,6 +54,7 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 {
                     output[ip] = "throw";
                     used[ip] = true;
+                    flow[ip].kind = 1;
                     continue;
                 }
                 case 0x04: // getsuper
@@ -84,6 +94,8 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x0c: // ifnlt
                 {
                     int32_t offset = reader.readS24();
+                    flow[ip].kind = 2;
+                    flow[ip].params.push_back(reader.pos() + offset);
                     ep.push_back(reader.pos() + offset);
                     jumps.push_back(reader.pos() + offset);
                     output[ip] = stringf("ifnlt          L%u", reader.pos() + offset);
@@ -92,6 +104,8 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x0d: // ifnle
                 {
                     int32_t offset = reader.readS24();
+                    flow[ip].kind = 2;
+                    flow[ip].params.push_back(reader.pos() + offset);
                     ep.push_back(reader.pos() + offset);
                     jumps.push_back(reader.pos() + offset);
                     output[ip] = stringf("ifnle          L%u", reader.pos() + offset);
@@ -100,6 +114,8 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x0e: // ifngt
                 {
                     int32_t offset = reader.readS24();
+                    flow[ip].kind = 2;
+                    flow[ip].params.push_back(reader.pos() + offset);
                     ep.push_back(reader.pos() + offset);
                     jumps.push_back(reader.pos() + offset);
                     output[ip] = stringf("ifngt          L%u", reader.pos() + offset);
@@ -108,6 +124,8 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x0f: // ifnge
                 {
                     int32_t offset = reader.readS24();
+                    flow[ip].kind = 2;
+                    flow[ip].params.push_back(reader.pos() + offset);
                     ep.push_back(reader.pos() + offset);
                     jumps.push_back(reader.pos() + offset);
                     output[ip] = stringf("ifnge          L%u", reader.pos() + offset);
@@ -116,6 +134,8 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x10: // jump
                 {
                     int32_t offset = reader.readS24();
+                    flow[ip].kind = 3;
+                    flow[ip].params.push_back(reader.pos() + offset);
                     ep.push_back(reader.pos() + offset);
                     jumps.push_back(reader.pos() + offset);
                     output[ip] = stringf("jump           L%u", reader.pos() + offset);
@@ -129,6 +149,8 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x11: // iftrue
                 {
                     int32_t offset = reader.readS24();
+                    flow[ip].kind = 2;
+                    flow[ip].params.push_back(reader.pos() + offset);
                     ep.push_back(reader.pos() + offset);
                     jumps.push_back(reader.pos() + offset);
                     output[ip] = stringf("iftrue         L%u", reader.pos() + offset);
@@ -137,6 +159,8 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x12: // iffalse
                 {
                     int32_t offset = reader.readS24();
+                    flow[ip].kind = 2;
+                    flow[ip].params.push_back(reader.pos() + offset);
                     ep.push_back(reader.pos() + offset);
                     jumps.push_back(reader.pos() + offset);
                     output[ip] = stringf("iffalse        L%u", reader.pos() + offset);
@@ -145,6 +169,8 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x13: // ifeq
                 {
                     int32_t offset = reader.readS24();
+                    flow[ip].kind = 2;
+                    flow[ip].params.push_back(reader.pos() + offset);
                     ep.push_back(reader.pos() + offset);
                     jumps.push_back(reader.pos() + offset);
                     output[ip] = stringf("ifeq           L%u", reader.pos() + offset);
@@ -153,6 +179,8 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x14: // ifne
                 {
                     int32_t offset = reader.readS24();
+                    flow[ip].kind = 2;
+                    flow[ip].params.push_back(reader.pos() + offset);
                     ep.push_back(reader.pos() + offset);
                     jumps.push_back(reader.pos() + offset);
                     output[ip] = stringf("ifne           L%u", reader.pos() + offset);
@@ -161,6 +189,8 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x15: // iflt
                 {
                     int32_t offset = reader.readS24();
+                    flow[ip].kind = 2;
+                    flow[ip].params.push_back(reader.pos() + offset);
                     ep.push_back(reader.pos() + offset);
                     jumps.push_back(reader.pos() + offset);
                     output[ip] = stringf("iflt           L%u", reader.pos() + offset);
@@ -169,6 +199,8 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x16: // ifle
                 {
                     int32_t offset = reader.readS24();
+                    flow[ip].kind = 2;
+                    flow[ip].params.push_back(reader.pos() + offset);
                     ep.push_back(reader.pos() + offset);
                     jumps.push_back(reader.pos() + offset);
                     output[ip] = stringf("ifle           L%u", reader.pos() + offset);
@@ -177,6 +209,8 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x17: // ifgt
                 {
                     int32_t offset = reader.readS24();
+                    flow[ip].kind = 2;
+                    flow[ip].params.push_back(reader.pos() + offset);
                     ep.push_back(reader.pos() + offset);
                     jumps.push_back(reader.pos() + offset);
                     output[ip] = stringf("ifgt           L%u", reader.pos() + offset);
@@ -185,6 +219,8 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x18: // ifge
                 {
                     int32_t offset = reader.readS24();
+                    flow[ip].kind = 2;
+                    flow[ip].params.push_back(reader.pos() + offset);
                     ep.push_back(reader.pos() + offset);
                     jumps.push_back(reader.pos() + offset);
                     output[ip] = stringf("ifge           L%u", reader.pos() + offset);
@@ -193,6 +229,8 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x19: // ifstricteq
                 {
                     int32_t offset = reader.readS24();
+                    flow[ip].kind = 2;
+                    flow[ip].params.push_back(reader.pos() + offset);
                     ep.push_back(reader.pos() + offset);
                     jumps.push_back(reader.pos() + offset);
                     output[ip] = stringf("ifstricteq     L%u", reader.pos() + offset);
@@ -201,6 +239,8 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x1a: // ifstrictne
                 {
                     int32_t offset = reader.readS24();
+                    flow[ip].kind = 2;
+                    flow[ip].params.push_back(reader.pos() + offset);
                     ep.push_back(reader.pos() + offset);
                     jumps.push_back(reader.pos() + offset);
                     output[ip] = stringf("ifstrictne     L%u", reader.pos() + offset);
@@ -209,6 +249,8 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x1b: // lookupswitch
                 {
                     int32_t default_offset = reader.readS24();
+                    flow[ip].kind = 4;
+                    flow[ip].params.push_back(ip + default_offset);
                     ep.push_back(ip + default_offset);
                     jumps.push_back(ip + default_offset);
                     int32_t case_count = reader.readU30();
@@ -217,6 +259,7 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
 
                     do {
                         uint32_t case_offset = reader.readS24();
+                        flow[ip].params.push_back(ip + case_offset);
                         ep.push_back(ip + case_offset);
                         jumps.push_back(ip + case_offset);
                         if (!cases.empty()) cases += ", ";
@@ -397,12 +440,14 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x47: // returnvoid
                 {
                     output[ip] = "returnvoid";
+                    flow[ip].kind = 1;
                     used[ip] = true;
                     continue;
                 }
                 case 0x48: // returnvalue
                 {
                     output[ip] = "returnvalue";
+                    flow[ip].kind = 1;
                     used[ip] = true;
                     continue;
                 }
@@ -948,7 +993,9 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                     return false;
             }
             // normal flow - next operation
+            
             ep.push_back(reader.pos());
+            
             for (uint32_t i = ip; i < reader.pos(); ++i) used[i] = true;
         }
         jumps.unique();

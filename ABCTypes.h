@@ -172,6 +172,9 @@ struct ABCTrait {
     };
 
     ABCUI32List metadata;
+    
+    std::string getKind();
+    ABCStringList getAttrs();
 };
 
 typedef std::vector<ABCTrait> ABCTraitList;
@@ -285,4 +288,5 @@ struct ABCConstantPool {
     std::string getName(uint32_t index);
 };
 
+std::string implode(const std::string &delim, const ABCStringList &items);
 #endif /* ABCTYPES_H_ */

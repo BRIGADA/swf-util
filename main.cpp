@@ -30,6 +30,8 @@
 #include <list>
 #include <algorithm>
 
+void saveXML(ABCFile *abc);
+
 bool writefile(std::string filename, std::string& content) {
     int fd = open(filename.data(), O_WRONLY | O_CREAT | O_TRUNC, 00666);
     if (fd == -1) return false;
@@ -83,6 +85,7 @@ int main(int argc, char * argv[]) {
                     ABCFile * abc = ABCReader((*it)->content.data() + p + 1, (*it)->content.length() - p - 1).read();
 
                     if (abc) {
+                        saveXML(abc);
                         printf("version: %u.%u\n", abc->versionMajor, abc->versionMinor);
                         printf("   ints: %lu\n", abc->cpool.ints.size());
                         printf("  uints: %lu\n", abc->cpool.uints.size());
@@ -97,21 +100,72 @@ int main(int argc, char * argv[]) {
                         printf("classes: %lu\n", abc->classes.size());
                         printf("scripts: %lu\n", abc->scripts.size());
                         printf(" bodies: %lu\n", abc->bodies.size());
-                        
-//                        for(uint i = 0; i < abc->cpool.multinames.size(); ++i) {
-//                            DEBUG("MULTINAME (%u)", i);
-//                            DEBUG("\tkind: %u", abc->cpool.multinames[i].kind);
-//                        }
 
-                        for (ABCInstanceList::iterator it = abc->instances.begin(); it != abc->instances.end(); ++it) {
-                            DEBUG("INSTANCE:");
-                            
-                            if(abc->cpool.multinames[it->name].kind != 7) throw "wrong kind";
-                            DEBUG("\tname: %u", abc->cpool.multinames[it->name].kind);
-                            if (it->super) {
-                                DEBUG("\tsuper: '%s'", abc->getMultiname(it->super).data());
+                        //                        for(uint i = 0; i < abc->cpool.multinames.size(); ++i) {
+                        //                            DEBUG("MULTINAME (%u)", i);
+                        //                            DEBUG("\tkind: %u", abc->cpool.multinames[i].kind);
+                        //                        }
+
+                        if (!abc->metadatas.empty()) {
+                            DEBUG("METADATAS");
+                            for (ABCMetadataList::iterator it = abc->metadatas.begin(); it != abc->metadatas.end(); ++it) {
+                                DEBUG("\tname: %u, items: %u", it->name, it->items.size());
                             }
                         }
+
+                        if (!abc->instances.empty()) {
+                            DEBUG("INSTANCES:");
+                            for (ABCInstanceList::iterator it = abc->instances.begin(); it != abc->instances.end(); ++it) {
+                                if (abc->cpool.multinames[it->name].kind != 7) throw "wrong kind";
+                                DEBUG("\tname:  %s", abc->cpool.getName(it->name).data());
+                                if (it->super) {
+                                    DEBUG("\tsuper: %s", abc->cpool.getName(it->super).data());
+                                }
+
+                                ABCStringList flags;
+                                if (it->flags & INSTANCE_FLAG_FINAL) flags.push_back("FINAL");
+                                if (it->flags & INSTANCE_FLAG_INTERFACE) flags.push_back("INTERFACE");
+                                if (it->flags & INSTANCE_FLAG_PROTECTED_NS) flags.push_back("PROTECTED_NS");
+                                if (it->flags & INSTANCE_FLAG_SEALED) flags.push_back("SEALED");
+
+                                DEBUG("\tflags: %s", implode(", ", flags).data());
+                                if (it->flags & INSTANCE_FLAG_PROTECTED_NS) {
+                                    DEBUG("\tprotected_ns: %s", abc->cpool.getNS(it->protectedNS).data());
+                                }
+
+                                if (!it->interfaces.empty()) {
+                                    DEBUG("\tinterfaces:");
+                                    for (uint32_t i = 0; i < it->interfaces.size(); ++i) {
+                                        DEBUG("\t\t%u: %s", i, abc->cpool.getName(it->interfaces[i]).data());
+                                    }
+                                }
+
+                                DEBUG("\tiinit: %u", it->iinit);
+
+                                if (!it->traits.empty()) {
+                                    DEBUG("\ttraits:");
+                                    for (uint32_t i = 0; i < it->traits.size(); ++i) {
+                                        DEBUG("\t\t%u:", i);
+                                        DEBUG("\t\t\tname: %s", abc->cpool.getName(it->traits[i].name).data());
+                                        DEBUG("\t\t\tkind: %s", it->traits[i].getKind().data());
+                                        if (!it->traits[i].getAttrs().empty()) {
+                                            DEBUG("\t\t\tattrs: %s", implode(", ", it->traits[i].getAttrs()).data());
+                                        }
+                                        if((it->traits[i].kind & 0x0f) == TRAIT_KIND_SLOT) {
+                                            DEBUG("\t\t\t\tslot_id: %u", it->traits[i].Slot.slotID);
+                                            if(it->traits[i].Slot.typeName) {
+                                                DEBUG("\t\t\t\ttype_name: %s", abc->cpool.getName(it->traits[i].Slot.typeName).data());
+                                            }
+                                            DEBUG("\t\t\t\tvindex: %u", it->traits[i].Slot.vindex);
+                                            DEBUG("\t\t\t\tvkind: %u", it->traits[i].Slot.vkind);
+                                        }
+                                    }
+                                }
+
+                                DEBUG("");
+                            }
+                        }
+                        continue;
 
 
                         uint32_t i = 0;
@@ -468,3 +522,76 @@ int main(int argc, char * argv[]) {
     return 0;
 }
 
+uint32_t level = 0;
+class XMLAttrList : public ABCStringList
+{
+public:
+    XMLAttrList& set(std::string name, std::string value) {
+        this->push_back(stringf("%s=\"%s\"", name.data(), value.data()));
+        return *this;
+    }
+    XMLAttrList& set(std::string name, uint32_t value) {
+        this->push_back(stringf("%s=\"%u\"", name.data(), value));
+        return *this;
+    }
+    XMLAttrList& set(std::string name, int32_t value) {
+        this->push_back(stringf("%s=\"%d\"", name.data(), value));
+        return *this;
+    }
+};
+
+void CONTENTTAG(std::string name, std::string content, XMLAttrList attrs = XMLAttrList());
+void TAG(std::string name, XMLAttrList attrs = XMLAttrList());
+void OPENTAG(std::string name, XMLAttrList attrs = XMLAttrList());
+void CLOSETAG(std::string name);
+
+
+void saveXML(ABCFile *abc) {
+    DEBUG("<?xml version\"1.0\" ?>");
+    OPENTAG("ABC", XMLAttrList().set("versionMajor", abc->versionMajor).set("versionMinor", abc->versionMinor));
+    OPENTAG("CPool");
+    OPENTAG("integers");
+    for(uint32_t i = 0; i < abc->cpool.ints.size(); ++i)
+    {
+        CONTENTTAG("item", stringf("%d", abc->cpool.ints[i]), XMLAttrList().set("id", i));
+    }
+    CLOSETAG("integers");
+    CLOSETAG("CPool");
+    CLOSETAG("ABC");
+}
+
+void CONTENTTAG(std::string name, std::string content, XMLAttrList attrs)
+{
+    if(attrs.empty()) {
+        DEBUG("%s<%s>%s</%s>", std::string(level, '\t').data(), name.data(), content.data(), name.data());
+    }
+    else {
+        DEBUG("%s<%s %s>%s</%s>", std::string(level, '\t').data(), name.data(), implode(" ", attrs).data(), content.data(), name.data());
+    }
+}
+void TAG(std::string name, XMLAttrList attrs)
+{
+    if(attrs.empty()) {
+        DEBUG("%s<%s/>", std::string(level, '\t').data(), name.data());
+    }
+    else {
+        DEBUG("%s<%s %s/>", std::string(level, '\t').data(), name.data(), implode(" ", attrs).data());
+    }
+}
+
+void OPENTAG(std::string name, XMLAttrList attrs)
+{
+    if(attrs.empty()) {
+        DEBUG("%s<%s>", std::string(level, '\t').data(), name.data());
+    }
+    else {
+        DEBUG("%s<%s %s>", std::string(level, '\t').data(), name.data(), implode(" ", attrs).data());
+    }
+    level++;
+}
+
+void CLOSETAG(std::string name)
+{
+    level--;
+    DEBUG("%s</%s>", std::string(level, '\t').data(), name.data());
+}

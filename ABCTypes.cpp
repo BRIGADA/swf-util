@@ -24,7 +24,7 @@ std::string ABCConstantPool::getNS(uint32_t index) {
         case CONSTANT_PackageInternalNs:
             return "PackageInternalNs(" + getSTR(namespaces[index].name, true) + ")";
         case CONSTANT_ProtectedNamespace:
-            return "ProtectedNamespace(" + getSTR(namespaces[index].name, true) + ")";
+            return stringf("ProtectedNamespace(%s)", getSTR(namespaces[index].name, true).data());
         case CONSTANT_ExplicitNamespace:
             return "ExplicitNamespace(" + getSTR(namespaces[index].name, true) + ")";
         case CONSTANT_StaticProtectedNs:
@@ -55,10 +55,10 @@ std::string ABCConstantPool::getName(uint32_t index) {
     if (index >= multinames.size()) {
         throw "MULTINAME OUT OF RANGE";
     }
-    
+
     switch (multinames[index].kind) {
         case CONSTANT_QName:
-            return "QName(" + getNS(multinames[index].ns) + ", " + getSTR(multinames[index].name, true) + ")";
+            return stringf("QName(%s, %s)", getSTR(multinames[index].name, true).data(), getNS(multinames[index].ns).data());
         case CONSTANT_QNameA:
             return "QNameA(" + getNS(multinames[index].ns) + ", " + getSTR(multinames[index].name, true) + ")";
         case CONSTANT_RTQName:
@@ -81,4 +81,44 @@ std::string ABCConstantPool::getName(uint32_t index) {
             DEBUG("KIND=%u", multinames[index].kind);
             throw "UNKNOWN MULTINAME KIND";
     }
+}
+
+std::string implode(const std::string &delim, const ABCStringList &items) {
+    std::string result;
+    for (ABCStringList::const_iterator it = items.begin(); it != items.end(); ++it) {
+        if (!result.empty()) result += delim;
+        result += *it;
+    }
+    return result;
+}
+
+std::string ABCTrait::getKind() {
+    switch (this->kind & 0x0f) {
+        case TRAIT_KIND_SLOT:
+            return "SLOT";
+        case TRAIT_KIND_METHOD:
+            return "METHOD";
+        case TRAIT_KIND_GETTER:
+            return "GETTER";
+        case TRAIT_KIND_SETTER:
+            return "SETTER";
+        case TRAIT_KIND_CLASS:
+            return "CLASS";
+        case TRAIT_KIND_FUNCTION:
+            return "FUNCTION";
+        case TRAIT_KIND_CONST:
+            return "CONST";
+        default:
+            DEBUG("KIND=%u", this->kind);
+            throw "UNKNOWN TRAIT KIND";
+    }
+}
+
+ABCStringList ABCTrait::getAttrs()
+{
+    ABCStringList result;
+    if(this->kind & TRAIT_ATTR_FINAL) result.push_back("FINAL");
+    if(this->kind & TRAIT_ATTR_OVERRIDE) result.push_back("OVERRIDE");
+    if(this->kind & TRAIT_ATTR_METADATA) result.push_back("METADATA");
+    return result;
 }

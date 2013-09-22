@@ -97,6 +97,22 @@ int main(int argc, char * argv[]) {
                         printf("classes: %lu\n", abc->classes.size());
                         printf("scripts: %lu\n", abc->scripts.size());
                         printf(" bodies: %lu\n", abc->bodies.size());
+                        
+//                        for(uint i = 0; i < abc->cpool.multinames.size(); ++i) {
+//                            DEBUG("MULTINAME (%u)", i);
+//                            DEBUG("\tkind: %u", abc->cpool.multinames[i].kind);
+//                        }
+
+                        for (ABCInstanceList::iterator it = abc->instances.begin(); it != abc->instances.end(); ++it) {
+                            DEBUG("INSTANCE:");
+                            
+                            if(abc->cpool.multinames[it->name].kind != 7) throw "wrong kind";
+                            DEBUG("\tname: %u", abc->cpool.multinames[it->name].kind);
+                            if (it->super) {
+                                DEBUG("\tsuper: '%s'", abc->getMultiname(it->super).data());
+                            }
+                        }
+
 
                         uint32_t i = 0;
                         for (ABCBodyList::iterator it = abc->bodies.begin(); it != abc->bodies.end(); ++it, ++i) {

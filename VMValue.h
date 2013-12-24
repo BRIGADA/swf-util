@@ -47,5 +47,6 @@ protected:
     
 };
 
+typedef std::vector<VMValue *> VMValues;
 #endif	/* VMVALUE_H */
 

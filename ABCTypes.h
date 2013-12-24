@@ -18,13 +18,22 @@ typedef std::vector<int32_t> ABCSI32List;
 
 typedef std::vector<double> ABCDoubleList;
 
-#define CONSTANT_PrivateNs 		0x05
-#define CONSTANT_Namespace 		0x08
-#define CONSTANT_PackageNamespace 	0x16
-#define CONSTANT_PackageInternalNs 	0x17
-#define CONSTANT_ProtectedNamespace     0x18
-#define CONSTANT_ExplicitNamespace 	0x19
-#define CONSTANT_StaticProtectedNs 	0x1A
+#define CONSTANT_Undefined              0x00
+#define CONSTANT_Utf8                   0x01 // string
+#define CONSTANT_Int                    0x03 // integer
+#define CONSTANT_UInt                   0x04 // uinteger
+#define CONSTANT_PrivateNs 		0x05 // namespace
+#define CONSTANT_Double                 0x06 // double
+#define CONSTANT_False                  0x0A
+#define CONSTANT_True                   0x0B
+#define CONSTANT_Null                   0x0C
+#define CONSTANT_Namespace 		0x08 // namespace
+#define CONSTANT_PackageNamespace 	0x16 // namespace
+#define CONSTANT_PackageInternalNs 	0x17 // namespace
+#define CONSTANT_ProtectedNamespace     0x18 // namespace
+#define CONSTANT_ExplicitNamespace 	0x19 // namespace
+#define CONSTANT_StaticProtectedNs 	0x1A // namespace
+
 
 struct ABCNamespace {
     uint8_t kind;
@@ -130,16 +139,22 @@ typedef std::vector<ABCMethod> ABCMethodList;
 #define TRAIT_KIND_FUNCTION	5
 #define TRAIT_KIND_CONST	6
 
-/* Is used with Trait_Method, Trait_Getter and Trait_Setter. It marks a method
- * that cannot be overridden by a sub-class */
+/* 
+ * Is used with Trait_Method, Trait_Getter and Trait_Setter.
+ * It marks a method that cannot be overridden by a sub-class 
+ */
 #define TRAIT_ATTR_FINAL 	0x10   
 
-/*Is used with Trait_Method, Trait_Getter and Trait_Setter. It marks a method
- * that has been overridden in this class */
+/*
+ * Is used with Trait_Method, Trait_Getter and Trait_Setter.
+ * It marks a method that has been overridden in this class 
+ */
 #define TRAIT_ATTR_OVERRIDE	0x20
 
-/* Is used to signal that the fields metadata_count and metadata follow the
- * data field in the traits_info entry */
+/*
+ * Is used to signal that the fields metadata_count and
+ * metadata follow the data field in the traits_info entry 
+ */
 #define TRAIT_ATTR_METADATA	0x40
 
 struct ABCTrait {
@@ -172,21 +187,22 @@ struct ABCTrait {
     };
 
     ABCUI32List metadata;
-    
-    std::string getKind();
+
+    std::string kindString();
     ABCStringList getAttrs();
 };
 
 typedef std::vector<ABCTrait> ABCTraitList;
 
 /*
- * The class is sealed: properties can not be dynamically added to instances
- * of the class.
+ * The class is sealed: properties can not be dynamically
+ * added to instances of the class.
  */
 #define INSTANCE_FLAG_SEALED            0x01
 
 /*
- * The class is final: it cannot be a base class for any other class.
+ * The class is final: it cannot be a base class for
+ * any other class.
  */
 #define INSTANCE_FLAG_FINAL 		0x02
 
@@ -196,8 +212,8 @@ typedef std::vector<ABCTrait> ABCTraitList;
 #define INSTANCE_FLAG_INTERFACE 	0x04
 
 /*
- * The class uses its protected namespace and the protectedNs field is present
- * in the interface_info structure.
+ * The class uses its protected namespace and the protectedNs
+ * field is present in the interface_info structure.
  */
 #define INSTANCE_FLAG_PROTECTED_NS 	0x08
 
@@ -227,21 +243,22 @@ struct ABCScript {
 
 typedef std::vector<ABCScript> ABCScriptList;
 
-/**
- * The exception_info entry is used to define the range of ActionScript 3.0
- * instructions over which a particular exception handler is engaged.
+/*
+ * The exception_info entry is used to define the range
+ * of ActionScript 3.0 instructions over which a particular
+ * exception handler is engaged.
  */
 struct ABCException {
     uint32_t from; /* The starting position in the code field from which
-                         * the exception is enabled. */
+                    * the exception is enabled. */
 
     uint32_t to; /* The ending position in the code field after which
-                         * the exception is disabled. */
+                  * the exception is disabled. */
 
     uint32_t target; /* The position in the code field to which control
-                         * should jump if an exception of type exc_type is
-                         * encountered while executing instructions that lie
-                         * within the region [from, to] of the code field. */
+                      * should jump if an exception of type exc_type is
+                      * encountered while executing instructions that lie
+                      * within the region [from, to] of the code field. */
 
     uint32_t type; /* An index into the string array of the constant pool
                          * that identifies the name of the type of exception
@@ -282,11 +299,16 @@ struct ABCConstantPool {
     ABCNamespaceSetList namespaceSets;
     ABCMultinameList multinames;
 
-    std::string getSTR(uint32_t index, bool quote = false);
-    std::string getNS(uint32_t index);
-    std::string getNSS(uint32_t index);
-    std::string getName(uint32_t index);
+    std::string getString(uint32_t index);
+    std::string getNamespace(uint32_t index);
+    std::string getNamespaceSet(uint32_t index);
+    std::string getMultiname(uint32_t index);
+    std::string getMultinameHRF(uint32_t index);
+    std::string getMethodOptionHRF(ABCMethodOption option);
+
+    
+    static std::string getConstantType(uint8_t type);
+    static std::string getMultinameType(uint8_t type);
 };
 
-std::string implode(const std::string &delim, const ABCStringList &items);
 #endif /* ABCTYPES_H_ */

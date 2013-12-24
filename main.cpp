@@ -38,6 +38,7 @@ bool writefile(std::string filename, std::string& content) {
     write(fd, content.data(), content.size());
     close(fd);
     return true;
+
 }
 
 void SYSERR(const char * sysfunc) {
@@ -63,43 +64,91 @@ int main(int argc, char * argv[]) {
     SWFFile swf;
     if (swf.load(argv[1])) {
         // unsigned int abccount = 0;
-        for (SWFTagList::iterator it = swf.tags.begin(); it != swf.tags.end(); ++it) {
-            switch ((*it)->type) {
+        for (SWFTagList::iterator tag = swf.tags.begin(); tag != swf.tags.end(); ++tag) {
+            switch ((*tag)->type) {
                 case 69:
                 {
-                    printf("FileAttributes\n");
+                    DEBUG("FileAttributes");
                     SWFTagFileAttributes t;
-                    if (t.set((*it)->content)) {
-                        printf("\tUseDirectBlit: %d\n", t.useDirectBlit);
-                        printf("\t       UseGPU: %d\n", t.useGPU);
-                        printf("\t  HasMetadata: %d\n", t.hasMetadata);
-                        printf("\tActionScript3: %d\n", t.actionScript3);
-                        printf("\t   UseNetwork: %d\n", t.useNetwork);
+                    if (t.set((*tag)->content)) {
+                        DEBUG("\tUseDirectBlit: %d", t.useDirectBlit);
+                        DEBUG("\t       UseGPU: %d", t.useGPU);
+                        DEBUG("\t  HasMetadata: %d", t.hasMetadata);
+                        DEBUG("\tActionScript3: %d", t.actionScript3);
+                        DEBUG("\t   UseNetwork: %d", t.useNetwork);
                     }
                     break;
                 }
                 case 82:
                 {
-                    printf("DoABC2\n");
-                    int p = (*it)->content.find_first_of('\0', 4);
-                    ABCFile * abc = ABCReader((*it)->content.data() + p + 1, (*it)->content.length() - p - 1).read();
+                    DEBUG("DoABC2");
+
+                    int p = (*tag)->content.find_first_of('\0', 4);
+                    ABCFile * abc = ABCReader((*tag)->content.data() + p + 1, (*tag)->content.length() - p - 1).read();
 
                     if (abc) {
-                        saveXML(abc);
-                        printf("version: %u.%u\n", abc->versionMajor, abc->versionMinor);
-                        printf("   ints: %lu\n", abc->cpool.ints.size());
-                        printf("  uints: %lu\n", abc->cpool.uints.size());
-                        printf("doubles: %lu\n", abc->cpool.doubles.size());
-                        printf("strings: %lu\n", abc->cpool.strings.size());
-                        printf("     ns: %lu\n", abc->cpool.namespaces.size());
-                        printf("    sns: %lu\n", abc->cpool.namespaceSets.size());
-                        printf("  names: %lu\n", abc->cpool.multinames.size());
-                        printf("methods: %lu\n", abc->methods.size());
-                        printf("  metas: %lu\n", abc->metadatas.size());
-                        printf("  insts: %lu\n", abc->instances.size());
-                        printf("classes: %lu\n", abc->classes.size());
-                        printf("scripts: %lu\n", abc->scripts.size());
-                        printf(" bodies: %lu\n", abc->bodies.size());
+                        DEBUG("version: %u.%u", abc->versionMajor, abc->versionMinor);
+                        DEBUG("   ints: %u", abc->cpool.ints.size());
+                        DEBUG("  uints: %u", abc->cpool.uints.size());
+                        DEBUG("doubles: %u", abc->cpool.doubles.size());
+                        DEBUG("strings: %u", abc->cpool.strings.size());
+                        DEBUG("     ns: %u", abc->cpool.namespaces.size());
+                        DEBUG("    nss: %u", abc->cpool.namespaceSets.size());
+                        DEBUG("  names: %u", abc->cpool.multinames.size());
+                        DEBUG("methods: %u", abc->methods.size());
+                        DEBUG("  metas: %u", abc->metadatas.size());
+                        DEBUG("  insts: %u", abc->instances.size());
+                        DEBUG("classes: %u", abc->classes.size());
+                        DEBUG("scripts: %u", abc->scripts.size());
+                        DEBUG(" bodies: %u", abc->bodies.size());
+
+                        DEBUG("INTS");
+                        for (uint32_t i = 0; i < abc->cpool.ints.size(); ++i) {
+                            DEBUG("%8u: %d", i, abc->cpool.ints[i]);
+                        }
+
+                        DEBUG("UINTS");
+                        for (uint32_t i = 0; i < abc->cpool.uints.size(); ++i) {
+                            DEBUG("%8u: %u", i, abc->cpool.uints[i]);
+                        }
+
+                        DEBUG("DOUBLES");
+                        for (uint32_t i = 0; i < abc->cpool.doubles.size(); ++i) {
+                            DEBUG("%8u: %f", i, abc->cpool.doubles[i]);
+                        }
+
+                        DEBUG("STRINGS");
+                        for (uint32_t i = 0; i < abc->cpool.strings.size(); ++i) {
+                            DEBUG("%8u: '%s'", i, string_escape(abc->cpool.strings[i]).data());
+                        }
+
+                        //                        DEBUG("NAMESPACES");
+                        //                        for(uint32_t i = 0; i < abc->cpool.namespaces.size(); ++i) {
+                        //                            DEBUG("%8u: %s", i, abc->cpool.getNS(i).data());
+                        //                        }
+                        //                        
+                        //                        DEBUG("NAMESPACE SETS");
+                        //                        for(uint32_t i = 0; i < abc->cpool.namespaceSets.size(); ++i) {
+                        //                            DEBUG("%8u: %s", i, abc->cpool.getNSS(i).data());
+                        //                        }
+
+                        DEBUG("METHODS");
+                        for (uint32_t i = 0; i < abc->methods.size(); ++i) {
+                            DEBUG("%6u: %s", i, abc->methods[i].name ? abc->cpool.getString(abc->methods[i].name).data() : "<NONAME>");
+                            for (uint32_t j = 0; j < abc->methods[i].params.size(); ++j) {
+                                if ((abc->methods[i].flags & METHOD_FLAG_HAS_OPTIONAL) && (j >= abc->methods[i].params.size() - abc->methods[i].options.size())) {
+                                    DEBUG("\t%s:%s = %s",
+                                            abc->methods[i].params[j].name ? abc->cpool.getMultinameHRF(abc->methods[i].params[j].name).data() : stringf("PARAM_%u", j).data(),
+                                            abc->cpool.getMultinameHRF(abc->methods[i].params[j].type).data(), 
+                                            abc->cpool.getMethodOptionHRF(abc->methods[i].options[j - (abc->methods[i].params.size() - abc->methods[i].options.size())]).data());
+                                } else {
+                                    DEBUG("\t%s:%s",
+                                            abc->methods[i].params[j].name ? abc->cpool.getMultinameHRF(abc->methods[i].params[j].name).data() : stringf("PARAM_%u", j).data(),
+                                            abc->cpool.getMultinameHRF(abc->methods[i].params[j].type).data());
+                                }
+                            }
+                            DEBUG("\treturn %s", abc->cpool.getMultinameHRF(abc->methods[i].returnType).data());
+                        }
 
                         //                        for(uint i = 0; i < abc->cpool.multinames.size(); ++i) {
                         //                            DEBUG("MULTINAME (%u)", i);
@@ -115,49 +164,51 @@ int main(int argc, char * argv[]) {
 
                         if (!abc->instances.empty()) {
                             DEBUG("INSTANCES:");
-                            for (ABCInstanceList::iterator it = abc->instances.begin(); it != abc->instances.end(); ++it) {
-                                if (abc->cpool.multinames[it->name].kind != 7) throw "wrong kind";
-                                DEBUG("\tname:  %s", abc->cpool.getName(it->name).data());
-                                if (it->super) {
-                                    DEBUG("\tsuper: %s", abc->cpool.getName(it->super).data());
+                            uint32_t i = 0;
+                            for (ABCInstanceList::iterator instance = abc->instances.begin(); instance != abc->instances.end(); ++instance, ++i) {
+                                if (abc->cpool.multinames[instance->name].kind != 7) throw "wrong kind";
+                                DEBUG("\tname:  %s", abc->cpool.getMultiname(instance->name).data());
+                                if (instance->super) {
+                                    DEBUG("\tsuper: %s", abc->cpool.getMultiname(instance->super).data());
                                 }
 
                                 ABCStringList flags;
-                                if (it->flags & INSTANCE_FLAG_FINAL) flags.push_back("FINAL");
-                                if (it->flags & INSTANCE_FLAG_INTERFACE) flags.push_back("INTERFACE");
-                                if (it->flags & INSTANCE_FLAG_PROTECTED_NS) flags.push_back("PROTECTED_NS");
-                                if (it->flags & INSTANCE_FLAG_SEALED) flags.push_back("SEALED");
+                                if (instance->flags & INSTANCE_FLAG_FINAL) flags.push_back("FINAL");
+                                if (instance->flags & INSTANCE_FLAG_INTERFACE) flags.push_back("INTERFACE");
+                                if (instance->flags & INSTANCE_FLAG_PROTECTED_NS) flags.push_back("PROTECTED_NS");
+                                if (instance->flags & INSTANCE_FLAG_SEALED) flags.push_back("SEALED");
 
                                 DEBUG("\tflags: %s", implode(", ", flags).data());
-                                if (it->flags & INSTANCE_FLAG_PROTECTED_NS) {
-                                    DEBUG("\tprotected_ns: %s", abc->cpool.getNS(it->protectedNS).data());
+                                if (instance->flags & INSTANCE_FLAG_PROTECTED_NS) {
+                                    DEBUG("\tprotected_ns: %s", abc->cpool.getNamespace(instance->protectedNS).data());
                                 }
 
-                                if (!it->interfaces.empty()) {
+                                if (!instance->interfaces.empty()) {
                                     DEBUG("\tinterfaces:");
-                                    for (uint32_t i = 0; i < it->interfaces.size(); ++i) {
-                                        DEBUG("\t\t%u: %s", i, abc->cpool.getName(it->interfaces[i]).data());
+                                    for (uint32_t i = 0; i < instance->interfaces.size(); ++i) {
+                                        DEBUG("\t\t%u: %s", i, abc->cpool.getMultiname(instance->interfaces[i]).data());
                                     }
                                 }
 
-                                DEBUG("\tiinit: %u", it->iinit);
+                                DEBUG("\tiinit: %u", instance->iinit);
 
-                                if (!it->traits.empty()) {
+                                if (!instance->traits.empty()) {
                                     DEBUG("\ttraits:");
-                                    for (uint32_t i = 0; i < it->traits.size(); ++i) {
+                                    for (uint32_t i = 0; i < instance->traits.size(); ++i) {
                                         DEBUG("\t\t%u:", i);
-                                        DEBUG("\t\t\tname: %s", abc->cpool.getName(it->traits[i].name).data());
-                                        DEBUG("\t\t\tkind: %s", it->traits[i].getKind().data());
-                                        if (!it->traits[i].getAttrs().empty()) {
-                                            DEBUG("\t\t\tattrs: %s", implode(", ", it->traits[i].getAttrs()).data());
+                                        DEBUG("\t\t\tname: %s", abc->cpool.getMultiname(instance->traits[i].name).data());
+                                        DEBUG("\t\t\tkind: %s", instance->traits[i].kindString().data());
+                                        if (!instance->traits[i].getAttrs().empty()) {
+                                            DEBUG("\t\t\tattrs: %s", implode(", ", instance->traits[i].getAttrs()).data());
                                         }
-                                        if((it->traits[i].kind & 0x0f) == TRAIT_KIND_SLOT) {
-                                            DEBUG("\t\t\t\tslot_id: %u", it->traits[i].Slot.slotID);
-                                            if(it->traits[i].Slot.typeName) {
-                                                DEBUG("\t\t\t\ttype_name: %s", abc->cpool.getName(it->traits[i].Slot.typeName).data());
+                                        continue;
+                                        if ((instance->traits[i].kind & 0x0f) == TRAIT_KIND_SLOT) {
+                                            DEBUG("\t\t\t\tslot_id: %u", instance->traits[i].Slot.slotID);
+                                            if (instance->traits[i].Slot.typeName) {
+                                                DEBUG("\t\t\t\ttype_name: %s", abc->cpool.getMultiname(instance->traits[i].Slot.typeName).data());
                                             }
-                                            DEBUG("\t\t\t\tvindex: %u", it->traits[i].Slot.vindex);
-                                            DEBUG("\t\t\t\tvkind: %u", it->traits[i].Slot.vkind);
+                                            DEBUG("\t\t\t\tvindex: %u", instance->traits[i].Slot.vindex);
+                                            DEBUG("\t\t\t\tvkind: %u", instance->traits[i].Slot.vkind);
                                         }
                                     }
                                 }
@@ -189,7 +240,7 @@ int main(int argc, char * argv[]) {
                             if (!(*it).exceptions.empty()) {
                                 DEBUG("EXCEPTION COUNT: %u", (*it).exceptions.size());
                                 for (ABCExceptionList::iterator e = (*it).exceptions.begin(); e != (*it).exceptions.end(); ++e) {
-                                    DEBUG("[%u ... %u]->%u, type=%s, name=%s", (*e).from, (*e).to, (*e).target, (*e).type ? abc->cpool.getName((*e).type).data() : "*", (*e).name ? abc->cpool.getName((*e).name).data() : "*");
+                                    DEBUG("[%u ... %u]->%u, type=%s, name=%s", (*e).from, (*e).to, (*e).target, (*e).type ? abc->cpool.getMultiname((*e).type).data() : "*", (*e).name ? abc->cpool.getMultiname((*e).name).data() : "*");
                                     jumps.push_back(e->from);
                                     jumps.push_back(e->to);
                                     jumps.push_back(e->target);
@@ -240,7 +291,7 @@ int main(int argc, char * argv[]) {
                     break;
                 }
                 default:
-                    printf("%d - %lu\n", (*it)->type, (*it)->content.size());
+                    DEBUG("%s (%u bytes)", TagTypeAsString((*tag)->type).data(), (*tag)->content.size());
             }
         }
 
@@ -523,17 +574,20 @@ int main(int argc, char * argv[]) {
 }
 
 uint32_t level = 0;
-class XMLAttrList : public ABCStringList
-{
+
+class XMLAttrList : public ABCStringList {
 public:
+
     XMLAttrList& set(std::string name, std::string value) {
         this->push_back(stringf("%s=\"%s\"", name.data(), value.data()));
         return *this;
     }
+
     XMLAttrList& set(std::string name, uint32_t value) {
         this->push_back(stringf("%s=\"%u\"", name.data(), value));
         return *this;
     }
+
     XMLAttrList& set(std::string name, int32_t value) {
         this->push_back(stringf("%s=\"%d\"", name.data(), value));
         return *this;
@@ -545,14 +599,12 @@ void TAG(std::string name, XMLAttrList attrs = XMLAttrList());
 void OPENTAG(std::string name, XMLAttrList attrs = XMLAttrList());
 void CLOSETAG(std::string name);
 
-
 void saveXML(ABCFile *abc) {
     DEBUG("<?xml version\"1.0\" ?>");
     OPENTAG("ABC", XMLAttrList().set("versionMajor", abc->versionMajor).set("versionMinor", abc->versionMinor));
     OPENTAG("CPool");
     OPENTAG("integers");
-    for(uint32_t i = 0; i < abc->cpool.ints.size(); ++i)
-    {
+    for (uint32_t i = 0; i < abc->cpool.ints.size(); ++i) {
         CONTENTTAG("item", stringf("%d", abc->cpool.ints[i]), XMLAttrList().set("id", i));
     }
     CLOSETAG("integers");
@@ -560,38 +612,32 @@ void saveXML(ABCFile *abc) {
     CLOSETAG("ABC");
 }
 
-void CONTENTTAG(std::string name, std::string content, XMLAttrList attrs)
-{
-    if(attrs.empty()) {
+void CONTENTTAG(std::string name, std::string content, XMLAttrList attrs) {
+    if (attrs.empty()) {
         DEBUG("%s<%s>%s</%s>", std::string(level, '\t').data(), name.data(), content.data(), name.data());
-    }
-    else {
+    } else {
         DEBUG("%s<%s %s>%s</%s>", std::string(level, '\t').data(), name.data(), implode(" ", attrs).data(), content.data(), name.data());
     }
 }
-void TAG(std::string name, XMLAttrList attrs)
-{
-    if(attrs.empty()) {
+
+void TAG(std::string name, XMLAttrList attrs) {
+    if (attrs.empty()) {
         DEBUG("%s<%s/>", std::string(level, '\t').data(), name.data());
-    }
-    else {
+    } else {
         DEBUG("%s<%s %s/>", std::string(level, '\t').data(), name.data(), implode(" ", attrs).data());
     }
 }
 
-void OPENTAG(std::string name, XMLAttrList attrs)
-{
-    if(attrs.empty()) {
+void OPENTAG(std::string name, XMLAttrList attrs) {
+    if (attrs.empty()) {
         DEBUG("%s<%s>", std::string(level, '\t').data(), name.data());
-    }
-    else {
+    } else {
         DEBUG("%s<%s %s>", std::string(level, '\t').data(), name.data(), implode(" ", attrs).data());
     }
     level++;
 }
 
-void CLOSETAG(std::string name)
-{
+void CLOSETAG(std::string name) {
     level--;
     DEBUG("%s</%s>", std::string(level, '\t').data(), name.data());
 }

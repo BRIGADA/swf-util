@@ -60,19 +60,19 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x04: // getsuper
                 {
                     uint32_t index = reader.readU30();
-                    output[ip] = stringf("getsuper       %s", _cpool.getName(index).data());
+                    output[ip] = stringf("getsuper       %s", _cpool.getMultiname(index).data());
                     break;
                 }
                 case 0x05: // setsuper
                 {
                     uint32_t index = reader.readU30();
-                    output[ip] = stringf("setsuper       %s", _cpool.getName(index).data());
+                    output[ip] = stringf("setsuper       %s", _cpool.getMultiname(index).data());
                     break;
                 }
                 case 0x06: // dxns
                 {
                     uint32_t index = reader.readU30();
-                    output[ip] = stringf("dxns           %s", _cpool.getSTR(index, true).data());
+                    output[ip] = stringf("dxns           '%s'", _cpool.getString(index).data());
                     break;
                 }
                 case 0x07: // dxnslate
@@ -352,7 +352,7 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 {
                     uint32_t index = reader.readU30();
 
-                    output[ip] = stringf("pushstring     %s", _cpool.getSTR(index, true).data());
+                    output[ip] = stringf("pushstring     '%s'", _cpool.getString(index).data());
                     break;
                 }
                 case 0x2d: // pushint
@@ -381,7 +381,7 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x31: // pushnamespace
                 {
                     uint32_t index = reader.readU30();
-                    output[ip] = stringf("pushnamespace  %s", _cpool.getNS(index).data());
+                    output[ip] = stringf("pushnamespace  %s", _cpool.getNamespace(index).data());
                     break;
                 }
                 case 0x32: // hasnext2
@@ -434,7 +434,7 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 {
                     uint32_t index = reader.readU30();
                     uint32_t argcount = reader.readU30();
-                    output[ip] = stringf("callproperty   %s, %u", _cpool.getName(index).data(), argcount);
+                    output[ip] = stringf("callproperty   %s, %u", _cpool.getMultiname(index).data(), argcount);
                     break;
                 }
                 case 0x47: // returnvoid
@@ -461,28 +461,28 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 {
                     uint32_t index = reader.readU30();
                     uint32_t argcount = reader.readU30();
-                    output[ip] = stringf("constructprop  %s, %u", _cpool.getName(index).data(), argcount);
+                    output[ip] = stringf("constructprop  %s, %u", _cpool.getMultiname(index).data(), argcount);
                     break;
                 }
                 case 0x4c: // callproplex
                 {
                     uint32_t index = reader.readU30();
                     uint32_t argcount = reader.readU30();
-                    output[ip] = stringf("callproplex    %s, %u", _cpool.getName(index).data(), argcount);
+                    output[ip] = stringf("callproplex    %s, %u", _cpool.getMultiname(index).data(), argcount);
                     break;
                 }
                 case 0x4e: // callsupervoid
                 {
                     uint32_t index = reader.readU30();
                     uint32_t argcount = reader.readU30();
-                    output[ip] = stringf("callsupervoid  %s, %u", _cpool.getName(index).data(), argcount);
+                    output[ip] = stringf("callsupervoid  %s, %u", _cpool.getMultiname(index).data(), argcount);
                     break;
                 }
                 case 0x4f: // callpropvoid
                 {
                     uint32_t index = reader.readU30();
                     uint32_t argcount = reader.readU30();
-                    output[ip] = stringf("callpropvoid   %s, %u", _cpool.getName(index).data(), argcount);
+                    output[ip] = stringf("callpropvoid   %s, %u", _cpool.getMultiname(index).data(), argcount);
                     break;
                 }
                 case 0x53: // applytype
@@ -529,13 +529,13 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x5d: // findpropstrict
                 {
                     uint32_t index = reader.readU30();
-                    output[ip] = stringf("findpropstrict %s", _cpool.getName(index).data());
+                    output[ip] = stringf("findpropstrict %s", _cpool.getMultiname(index).data());
                     break;
                 }
                 case 0x5e: // findproperty
                 {
                     uint32_t index = reader.readU30();
-                    output[ip] = stringf("findproperty   %s", _cpool.getName(index).data());
+                    output[ip] = stringf("findproperty   %s", _cpool.getMultiname(index).data());
                     break;
                 }
                 case 0x5f: // finddef
@@ -548,13 +548,13 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x60: // getlex
                 {
                     uint32_t index = reader.readU30();
-                    output[ip] = stringf("getlex         %s", _cpool.getName(index).data());
+                    output[ip] = stringf("getlex         %s", _cpool.getMultiname(index).data());
                     break;
                 }
                 case 0x61: // setproperty
                 {
                     uint32_t index = reader.readU30();
-                    output[ip] = stringf("setproperty    %s", _cpool.getName(index).data());
+                    output[ip] = stringf("setproperty    %s", _cpool.getMultiname(index).data());
                     break;
                 }
                 case 0x62: // getlocal
@@ -583,19 +583,19 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x66: // getproperty
                 {
                     uint32_t index = reader.readU30();
-                    output[ip] = stringf("getproperty    %s", _cpool.getName(index).data());
+                    output[ip] = stringf("getproperty    %s", _cpool.getMultiname(index).data());
                     break;
                 }
                 case 0x68: // initproperty
                 {
                     uint32_t index = reader.readU30();
-                    output[ip] = stringf("initproperty   %s", _cpool.getName(index).data());
+                    output[ip] = stringf("initproperty   %s", _cpool.getMultiname(index).data());
                     break;
                 }
                 case 0x6a: // deleteproperty
                 {
                     uint32_t index = reader.readU30();
-                    output[ip] = stringf("deleteproperty %s", _cpool.getName(index).data());
+                    output[ip] = stringf("deleteproperty %s", _cpool.getMultiname(index).data());
                     break;
                 }
                 case 0x6c: // getslot
@@ -670,7 +670,7 @@ bool ABCVM::disassemble(std::string& code, uint32_t start, std::map<uint32_t, st
                 case 0x80: // coerce
                 {
                     uint32_t index = reader.readU30();
-                    output[ip] = stringf("coerce         %s", _cpool.getName(index).data());
+                    output[ip] = stringf("coerce         %s", _cpool.getMultiname(index).data());
                     break;
                 }
                 case 0x81: // coerce_b

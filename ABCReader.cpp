@@ -9,6 +9,7 @@
 #include "utils.h"
 #include <stdio.h>
 #include <algorithm>
+#include <stdexcept>
 
 #define OOR_EXCEPTION_MESSAGE "data ptr out of range"
 
@@ -228,12 +229,11 @@ ABCFile* ABCReader::read() {
                 (*a).name = readU30();
                 (*a).params.resize(readU30());
                 for (ABCUI32List::iterator it = (*a).params.begin(); it != (*a).params.end(); ++it) {
-                    (*it) = readU30();
+                    (*it) = readU30();                    
                 }
                 break;
             default:
-                printf("Unknown multiname kind = %u", (*a).kind);
-                throw "Unknown multiname kind";
+                throw std::invalid_argument(stringf("Unknown multiname kind", (*a).kind));
                 break;
         }
     }

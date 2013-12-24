@@ -28,12 +28,6 @@ public:
 	ABCClassList classes;
 	ABCScriptList scripts;
 	ABCBodyList bodies;
-
-	std::string getMultiname(uint32_t i);
-	std::string getNamespace(uint32_t i);
-
-	static std::string getNamespaceType(uint8_t type);        
-	static std::string getNameType(uint8_t type);
 };
 
 #endif /* ABCFILE_H_ */

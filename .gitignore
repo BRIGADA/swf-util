@@ -12,6 +12,7 @@
 *.la
 *.a
 
+/nbproject/
 /examples/*
 !/examples/*.swf
 /build/
